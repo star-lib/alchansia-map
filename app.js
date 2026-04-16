@@ -168,6 +168,7 @@ const cropById = new Map([...CROPS, ...TOOLS].map((crop) => [crop.id, crop]));
 const canvas = document.getElementById("field-canvas");
 const ctx = canvas.getContext("2d");
 const summary = document.getElementById("field-summary");
+const togglePanLockButton = document.getElementById("toggle-pan-lock-button");
 const copyLayoutButton = document.getElementById("copy-layout-button");
 const expandRingButton = document.getElementById("expand-ring-button");
 const resetButton = document.getElementById("reset-button");
@@ -193,6 +194,7 @@ const state = {
   hover: null,
   hoverPoint: null,
   selectedCropId: CROPS[0].id,
+  panLocked: false,
   view: {
     scale: 1,
     offsetX: 0,
@@ -206,6 +208,9 @@ const state = {
     lastX: 0,
     lastY: 0,
     dragging: false,
+    pointers: new Map(),
+    pinchDistance: 0,
+    pinchScale: 1,
   },
 };
 
@@ -912,6 +917,11 @@ async function copyLayoutToClipboard() {
   }
 }
 
+function renderPanLockButton() {
+  togglePanLockButton.textContent = state.panLocked ? "이동 잠김" : "이동 가능";
+  togglePanLockButton.classList.toggle("locked", state.panLocked);
+}
+
 function updateSlotTooltip() {
   if (state.hover?.kind !== "add" || !state.hoverPoint) {
     slotTooltip.hidden = true;
@@ -990,7 +1000,11 @@ function updateHover(point) {
     draw();
   }
 
-  canvas.style.cursor = nextHover ? "pointer" : state.pointer.active ? "grab" : "default";
+  canvas.style.cursor = nextHover
+    ? "pointer"
+    : state.pointer.active && !state.panLocked
+      ? "grab"
+      : "default";
 }
 
 function applyClick(point) {
@@ -1022,6 +1036,7 @@ function applyClick(point) {
 
 canvas.addEventListener("pointerdown", (event) => {
   const point = pointerPosition(event);
+  state.pointer.pointers.set(event.pointerId, { x: point.x, y: point.y });
   state.pointer.active = true;
   state.pointer.id = event.pointerId;
   state.pointer.startX = point.x;
@@ -1029,12 +1044,44 @@ canvas.addEventListener("pointerdown", (event) => {
   state.pointer.lastX = point.x;
   state.pointer.lastY = point.y;
   state.pointer.dragging = false;
+
+  if (state.pointer.pointers.size === 2) {
+    const [first, second] = [...state.pointer.pointers.values()];
+    state.pointer.pinchDistance = Math.hypot(second.x - first.x, second.y - first.y);
+    state.pointer.pinchScale = state.view.scale;
+  }
+
   canvas.setPointerCapture(event.pointerId);
-  canvas.style.cursor = "grab";
+  canvas.style.cursor = state.panLocked ? "default" : "grab";
 });
 
 canvas.addEventListener("pointermove", (event) => {
   const point = pointerPosition(event);
+  state.pointer.pointers.set(event.pointerId, { x: point.x, y: point.y });
+
+  if (state.pointer.pointers.size >= 2) {
+    const [first, second] = [...state.pointer.pointers.values()];
+    const distance = Math.hypot(second.x - first.x, second.y - first.y);
+    const midpoint = {
+      x: (first.x + second.x) / 2,
+      y: (first.y + second.y) / 2,
+    };
+
+    if (state.pointer.pinchDistance > 0) {
+      const worldPoint = screenToWorld(midpoint.x, midpoint.y);
+      const nextScale = Math.max(
+        MIN_SCALE,
+        Math.min(MAX_SCALE, state.pointer.pinchScale * (distance / state.pointer.pinchDistance)),
+      );
+      state.view.scale = nextScale;
+      state.view.offsetX = midpoint.x - worldPoint.x * nextScale;
+      state.view.offsetY = midpoint.y - worldPoint.y * nextScale;
+      draw();
+    }
+
+    canvas.style.cursor = "default";
+    return;
+  }
 
   if (state.pointer.active && state.pointer.id === event.pointerId) {
     const dx = point.x - state.pointer.lastX;
@@ -1048,7 +1095,7 @@ canvas.addEventListener("pointermove", (event) => {
       state.pointer.dragging = true;
     }
 
-    if (state.pointer.dragging) {
+    if (state.pointer.dragging && !state.panLocked) {
       state.view.offsetX += dx;
       state.view.offsetY += dy;
       state.pointer.lastX = point.x;
@@ -1073,7 +1120,12 @@ canvas.addEventListener("pointerleave", () => {
 });
 
 canvas.addEventListener("pointerup", (event) => {
+  state.pointer.pointers.delete(event.pointerId);
+
   if (state.pointer.id !== event.pointerId) {
+    if (state.pointer.pointers.size < 2) {
+      state.pointer.pinchDistance = 0;
+    }
     return;
   }
 
@@ -1082,6 +1134,7 @@ canvas.addEventListener("pointerup", (event) => {
   state.pointer.active = false;
   state.pointer.id = null;
   state.pointer.dragging = false;
+  state.pointer.pinchDistance = 0;
   canvas.releasePointerCapture(event.pointerId);
 
   if (!wasDragging && event.button === 0) {
@@ -1095,6 +1148,8 @@ canvas.addEventListener("pointercancel", () => {
   state.pointer.active = false;
   state.pointer.id = null;
   state.pointer.dragging = false;
+  state.pointer.pointers.clear();
+  state.pointer.pinchDistance = 0;
   state.hover = null;
   state.hoverPoint = null;
   canvas.style.cursor = "default";
@@ -1169,6 +1224,12 @@ copyLayoutButton.addEventListener("click", () => {
   copyLayoutToClipboard();
 });
 
+togglePanLockButton.addEventListener("click", () => {
+  state.panLocked = !state.panLocked;
+  renderPanLockButton();
+  canvas.style.cursor = state.panLocked ? "default" : "grab";
+});
+
 expandRingButton.addEventListener("click", () => {
   expandToNextRing();
 });
@@ -1221,6 +1282,7 @@ window.__planner_debug = {
 };
 
 renderPalette();
+renderPanLockButton();
 draw();
 resizeCanvas();
 startCanvasResolutionWatcher();
