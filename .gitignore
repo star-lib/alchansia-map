@@ -1,0 +1,4 @@
+node_modules/
+output/
+server.log
+server.err.log

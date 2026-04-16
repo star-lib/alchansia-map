@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>밭 배치 플래너</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero">
+        <p class="eyebrow">Field Layout Planner</p>
+        <h1>밭 배치를 바로 시험해보는 설계 보드</h1>
+        <p class="hero-copy">
+          기본 밭 모양을 먼저 보여주고, 바깥쪽의 <strong>+</strong> 칸을 눌러
+          한 칸씩 확장할 수 있게 만들었습니다.
+        </p>
+        <div class="legend">
+          <span><i class="legend-swatch tile"></i>현재 밭</span>
+          <span><i class="legend-swatch add"></i>확장 가능</span>
+        </div>
+      </section>
+
+      <section class="planner-card">
+        <div class="planner-toolbar">
+          <div>
+            <h2>현재 배치</h2>
+            <p id="field-summary">밭 칸 수 계산 중...</p>
+          </div>
+          <div class="toolbar-actions">
+            <button id="expand-ring-button" type="button">다음 거리 전체 확장</button>
+            <button id="clear-crops-button" type="button">작물만 비우기</button>
+            <button id="reset-button" type="button">기본 배치로 되돌리기</button>
+          </div>
+        </div>
+        <div class="planner-layout">
+          <aside class="crop-panel">
+            <div class="panel-block">
+              <h3>작물 선택</h3>
+              <p class="panel-copy">
+                밭 칸을 클릭하면 현재 선택한 작물을 심습니다.
+              </p>
+              <div id="crop-palette" class="crop-palette" aria-label="작물 선택"></div>
+            </div>
+            <div class="panel-block">
+              <h3>선택한 작물 설명</h3>
+              <div id="crop-details" class="crop-details"></div>
+            </div>
+            <div class="panel-block">
+              <h3>보기 안내</h3>
+              <ul class="help-list">
+                <li>점선 칸 클릭: 밭 1칸 확장</li>
+                <li>밭 칸 클릭: 선택한 작물 심기</li>
+                <li>드래그: 화면 이동</li>
+                <li>마우스 휠: 확대/축소</li>
+              </ul>
+            </div>
+          </aside>
+          <div class="canvas-wrap">
+            <canvas
+              id="field-canvas"
+              width="1200"
+              height="900"
+              aria-label="밭 배치 시뮬레이터"
+            ></canvas>
+            <div id="slot-tooltip" class="slot-tooltip" hidden></div>
+            <p class="hint">
+              물 공급, 중독, 생산 버프 범위는 색상 오버레이로 함께 표시됩니다.
+            </p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
