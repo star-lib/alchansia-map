@@ -1135,6 +1135,13 @@ canvas.addEventListener("contextmenu", (event) => {
     return;
   }
 
+  if (state.plants.has(cell.key)) {
+    state.plants.delete(cell.key);
+    draw();
+    updateHover(point);
+    return;
+  }
+
   state.cells.delete(cell.key);
   state.plants.delete(cell.key);
 
