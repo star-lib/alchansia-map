@@ -232,14 +232,29 @@ const productionSummary = document.getElementById("production-summary");
 const statsContent = document.getElementById("stats-content");
 const productionGrid = document.getElementById("production-grid");
 const copyFeedback = document.getElementById("copy-feedback");
+const plannerCard = document.querySelector(".planner-card");
+const siteNote = document.querySelector(".site-note");
 const shareLayoutButton = document.createElement("button");
 shareLayoutButton.id = "share-layout-button";
 shareLayoutButton.type = "button";
 shareLayoutButton.textContent = "밭 공유";
 toolbarActions.insertBefore(shareLayoutButton, expandRingButton);
+const slotPanel = document.createElement("section");
+slotPanel.className = "slot-panel";
+slotPanel.innerHTML = `
+  <div class="slot-panel-header">
+    <h3>배치 슬롯</h3>
+    <p>최대 10개 저장</p>
+  </div>
+  <div id="slot-list" class="slot-list"></div>
+`;
+plannerCard.insertBefore(slotPanel, siteNote);
+const slotList = document.getElementById("slot-list");
 
 const STORAGE_KEY = "alchansia-layout-v1";
+const SLOT_STORAGE_KEY = "alchansia-layout-slots-v1";
 const SHARE_PARAM = "layout";
+const MAX_LAYOUT_SLOTS = 10;
 const CENTER_CELL = { col: 3, row: 3 };
 const BASE_BOUNDS = {
   minCol: 0,
@@ -253,6 +268,7 @@ const state = {
   addSlots: [],
   plants: new Map(),
   desertTiles: new Set(),
+  layoutSlots: Array.from({ length: MAX_LAYOUT_SLOTS }, () => null),
   hover: null,
   hoverPoint: null,
   selectedCropId: CROPS[0].id,
@@ -415,6 +431,143 @@ function saveLayoutToStorage() {
   } catch (error) {
     // Ignore storage errors so the planner remains usable.
   }
+}
+
+function normalizeLayoutSlots(rawSlots) {
+  const slots = Array.from({ length: MAX_LAYOUT_SLOTS }, (_, index) => {
+    const rawSlot = Array.isArray(rawSlots) ? rawSlots[index] : null;
+    if (!rawSlot || typeof rawSlot !== "object" || !rawSlot.payload) {
+      return null;
+    }
+
+    return {
+      name: typeof rawSlot.name === "string" ? rawSlot.name : "",
+      payload: rawSlot.payload,
+      savedAt: typeof rawSlot.savedAt === "number" ? rawSlot.savedAt : Date.now(),
+    };
+  });
+
+  return slots;
+}
+
+function saveLayoutSlotsToStorage() {
+  try {
+    window.localStorage.setItem(SLOT_STORAGE_KEY, JSON.stringify(state.layoutSlots));
+  } catch (error) {
+    // Ignore storage errors so the planner remains usable.
+  }
+}
+
+function loadLayoutSlotsFromStorage() {
+  try {
+    const raw = window.localStorage.getItem(SLOT_STORAGE_KEY);
+    if (!raw) {
+      state.layoutSlots = Array.from({ length: MAX_LAYOUT_SLOTS }, () => null);
+      return;
+    }
+
+    state.layoutSlots = normalizeLayoutSlots(JSON.parse(raw));
+  } catch (error) {
+    state.layoutSlots = Array.from({ length: MAX_LAYOUT_SLOTS }, () => null);
+  }
+}
+
+function slotDisplayName(slot, index) {
+  return slot?.name?.trim() || `슬롯 ${index + 1}`;
+}
+
+function formatSlotTimestamp(savedAt) {
+  if (!savedAt) {
+    return "비어 있음";
+  }
+
+  return new Date(savedAt).toLocaleString("ko-KR", {
+    month: "numeric",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function renderLayoutSlots() {
+  slotList.innerHTML = "";
+
+  state.layoutSlots.forEach((slot, index) => {
+    const row = document.createElement("article");
+    row.className = "slot-row";
+
+    const nameInput = document.createElement("input");
+    nameInput.className = "slot-name-input";
+    nameInput.type = "text";
+    nameInput.maxLength = 24;
+    nameInput.placeholder = `슬롯 ${index + 1}`;
+    nameInput.value = slot?.name ?? "";
+    nameInput.setAttribute("aria-label", `슬롯 ${index + 1} 이름`);
+    nameInput.addEventListener("change", () => {
+      if (state.layoutSlots[index]) {
+        state.layoutSlots[index].name = nameInput.value.trim();
+        saveLayoutSlotsToStorage();
+        renderLayoutSlots();
+      }
+    });
+
+    const meta = document.createElement("p");
+    meta.className = "slot-meta";
+    meta.textContent = slot
+      ? `${slotDisplayName(slot, index)} · ${formatSlotTimestamp(slot.savedAt)}`
+      : `슬롯 ${index + 1} · 비어 있음`;
+
+    const actions = document.createElement("div");
+    actions.className = "slot-actions";
+
+    const saveButton = document.createElement("button");
+    saveButton.type = "button";
+    saveButton.className = "slot-action-button";
+    saveButton.textContent = "저장";
+    saveButton.addEventListener("click", () => {
+      state.layoutSlots[index] = {
+        name: nameInput.value.trim(),
+        payload: currentLayoutPayload(),
+        savedAt: Date.now(),
+      };
+      saveLayoutSlotsToStorage();
+      renderLayoutSlots();
+      showCopyFeedback(`${slotDisplayName(state.layoutSlots[index], index)}에 저장했습니다.`);
+    });
+
+    const loadButton = document.createElement("button");
+    loadButton.type = "button";
+    loadButton.className = "slot-action-button subtle";
+    loadButton.textContent = "불러오기";
+    loadButton.disabled = !slot;
+    loadButton.addEventListener("click", () => {
+      if (!state.layoutSlots[index]) {
+        return;
+      }
+      applyLayoutPayload(state.layoutSlots[index].payload);
+      saveLayoutToStorage();
+      renderPalette();
+      centerView();
+      renderLayoutSlots();
+      showCopyFeedback(`${slotDisplayName(state.layoutSlots[index], index)}을 불러왔습니다.`);
+    });
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "slot-action-button subtle";
+    deleteButton.textContent = "삭제";
+    deleteButton.disabled = !slot;
+    deleteButton.addEventListener("click", () => {
+      state.layoutSlots[index] = null;
+      saveLayoutSlotsToStorage();
+      renderLayoutSlots();
+      showCopyFeedback(`슬롯 ${index + 1}을 비웠습니다.`);
+    });
+
+    actions.append(saveButton, loadButton, deleteButton);
+    row.append(nameInput, meta, actions);
+    slotList.appendChild(row);
+  });
 }
 
 function loadLayoutFromStorage() {
@@ -1584,6 +1737,7 @@ window.__planner_debug = {
   },
 };
 
+loadLayoutSlotsFromStorage();
 const loadedSharedLayout = loadLayoutFromUrl();
 if (!loadedSharedLayout) {
   loadLayoutFromStorage();
@@ -1592,6 +1746,7 @@ copyLayoutButton.textContent = "캡쳐";
 renderPalette();
 renderPanLockButton();
 renderStatsPanel();
+renderLayoutSlots();
 draw();
 resizeCanvas();
 startCanvasResolutionWatcher();
