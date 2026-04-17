@@ -137,6 +137,7 @@ body {
 .crop-button,
 #toggle-pan-lock-button,
 #copy-layout-button,
+#share-layout-button,
 #expand-ring-button,
 #reset-button,
 #clear-crops-button {
@@ -210,6 +211,7 @@ body {
 #reset-button,
 #toggle-pan-lock-button,
 #copy-layout-button,
+#share-layout-button,
 #expand-ring-button,
 #clear-crops-button {
   border-radius: 999px;
@@ -232,6 +234,11 @@ body {
   box-shadow: 0 10px 25px rgba(62, 74, 132, 0.22);
 }
 
+#share-layout-button {
+  background: #4d8f74;
+  box-shadow: 0 10px 25px rgba(47, 102, 82, 0.22);
+}
+
 #expand-ring-button {
   background: #4f7f8f;
   box-shadow: 0 10px 25px rgba(47, 88, 112, 0.2);
@@ -249,6 +256,7 @@ body {
 
 #toggle-pan-lock-button:hover,
 #copy-layout-button:hover,
+#share-layout-button:hover,
 #expand-ring-button:hover,
 #reset-button:hover,
 #clear-crops-button:hover {
@@ -507,6 +515,7 @@ body {
 
   #toggle-pan-lock-button,
   #copy-layout-button,
+  #share-layout-button,
   #expand-ring-button,
   #clear-crops-button,
   #reset-button {

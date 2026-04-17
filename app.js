@@ -221,6 +221,7 @@ const ctx = canvas.getContext("2d");
 const summary = document.getElementById("field-summary");
 const togglePanLockButton = document.getElementById("toggle-pan-lock-button");
 const copyLayoutButton = document.getElementById("copy-layout-button");
+const toolbarActions = copyLayoutButton.parentElement;
 const expandRingButton = document.getElementById("expand-ring-button");
 const resetButton = document.getElementById("reset-button");
 const clearCropsButton = document.getElementById("clear-crops-button");
@@ -231,7 +232,14 @@ const productionSummary = document.getElementById("production-summary");
 const statsContent = document.getElementById("stats-content");
 const productionGrid = document.getElementById("production-grid");
 const copyFeedback = document.getElementById("copy-feedback");
+const shareLayoutButton = document.createElement("button");
+shareLayoutButton.id = "share-layout-button";
+shareLayoutButton.type = "button";
+shareLayoutButton.textContent = "링크 공유";
+toolbarActions.insertBefore(shareLayoutButton, expandRingButton);
 
+const STORAGE_KEY = "alchansia-layout-v1";
+const SHARE_PARAM = "layout";
 const CENTER_CELL = { col: 3, row: 3 };
 const BASE_BOUNDS = {
   minCol: 0,
@@ -301,6 +309,109 @@ function logicalPoint(col, row) {
     x: (col + row) / 2,
     y: (row - col) / 2,
   };
+}
+
+function currentLayoutPayload() {
+  return {
+    cells: [...state.cells],
+    plants: [...state.plants.entries()],
+    desertTiles: [...state.desertTiles],
+    selectedCropId: state.selectedCropId,
+  };
+}
+
+function applyLayoutPayload(payload) {
+  const cells = Array.isArray(payload?.cells) && payload.cells.length
+    ? new Set(payload.cells.filter((value) => typeof value === "string"))
+    : createStartingCells();
+  const plants = new Map(
+    Array.isArray(payload?.plants)
+      ? payload.plants.filter(
+          (entry) =>
+            Array.isArray(entry) &&
+            entry.length === 2 &&
+            typeof entry[0] === "string" &&
+            cropById.has(entry[1]),
+        )
+      : [],
+  );
+  const desertTiles = new Set(
+    Array.isArray(payload?.desertTiles)
+      ? payload.desertTiles.filter((value) => typeof value === "string")
+      : [],
+  );
+
+  state.cells = cells.size ? cells : createStartingCells();
+  state.plants = new Map([...plants].filter(([key]) => state.cells.has(key)));
+  state.desertTiles = new Set([...desertTiles].filter((key) => state.cells.has(key)));
+
+  if (cropById.has(payload?.selectedCropId)) {
+    state.selectedCropId = payload.selectedCropId;
+  }
+}
+
+function encodeLayoutPayload(payload) {
+  const json = JSON.stringify(payload);
+  const bytes = new TextEncoder().encode(json);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
+}
+
+function decodeLayoutPayload(encoded) {
+  const normalized = encoded.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = "=".repeat((4 - (normalized.length % 4 || 4)) % 4);
+  const binary = atob(normalized + padding);
+  const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+  return JSON.parse(new TextDecoder().decode(bytes));
+}
+
+function currentShareUrl() {
+  const url = new URL(window.location.href);
+  url.searchParams.delete(SHARE_PARAM);
+  url.hash = `${SHARE_PARAM}=${encodeLayoutPayload(currentLayoutPayload())}`;
+  return url.toString();
+}
+
+function loadLayoutFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    const hashValue = url.hash.startsWith("#") ? url.hash.slice(1) : url.hash;
+    const hashParams = new URLSearchParams(hashValue);
+    const encoded = hashParams.get(SHARE_PARAM) ?? url.searchParams.get(SHARE_PARAM);
+    if (!encoded) {
+      return false;
+    }
+
+    applyLayoutPayload(decodeLayoutPayload(encoded));
+    saveLayoutToStorage();
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+function saveLayoutToStorage() {
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(currentLayoutPayload()));
+  } catch (error) {
+    // Ignore storage errors so the planner remains usable.
+  }
+}
+
+function loadLayoutFromStorage() {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) {
+      return;
+    }
+
+    applyLayoutPayload(JSON.parse(raw));
+  } catch (error) {
+    // Ignore corrupt storage and keep defaults.
+  }
 }
 
 function chebyshevDistance(a, b) {
@@ -905,6 +1016,7 @@ function renderPalette() {
     `;
     button.addEventListener("click", () => {
       state.selectedCropId = crop.id;
+      saveLayoutToStorage();
       renderPalette();
       draw();
     });
@@ -1016,7 +1128,7 @@ async function canvasToBlob(targetCanvas) {
 
 async function copyLayoutToClipboard() {
   if (!navigator.clipboard || typeof ClipboardItem === "undefined") {
-    showCopyFeedback("이 브라우저에서는 이미지 클립보드 복사를 지원하지 않습니다.", true);
+    showCopyFeedback("이 브라우저에서는 이미지 캡쳐 저장을 지원하지 않습니다.", true);
     return;
   }
 
@@ -1025,11 +1137,22 @@ async function copyLayoutToClipboard() {
     const blob = await canvasToBlob(canvas);
     const item = new ClipboardItem({ "image/png": blob });
     await navigator.clipboard.write([item]);
-    showCopyFeedback("현재 밭 배치도를 클립보드에 복사했습니다.");
+    showCopyFeedback("현재 밭 배치도를 캡쳐해 클립보드에 저장했습니다.");
   } catch (error) {
-    showCopyFeedback("복사에 실패했습니다. HTTPS 또는 localhost 환경인지 확인해 주세요.", true);
+    showCopyFeedback("캡쳐에 실패했습니다. HTTPS 또는 localhost 환경인지 확인해 주세요.", true);
   } finally {
     draw();
+  }
+}
+
+async function copyShareLink() {
+  const shareUrl = currentShareUrl();
+
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    showCopyFeedback("현재 배치 공유 링크를 클립보드에 저장했습니다.");
+  } catch (error) {
+    showCopyFeedback("공유 링크 복사에 실패했습니다.", true);
   }
 }
 
@@ -1100,6 +1223,7 @@ function expandToNextRing() {
 
   state.hover = null;
   state.hoverPoint = null;
+  saveLayoutToStorage();
   draw();
 }
 
@@ -1142,6 +1266,7 @@ function applyClick(point) {
   const slot = findSlotAtPoint(point.x, point.y);
   if (slot) {
     state.cells.add(cellKey(slot.col, slot.row));
+    saveLayoutToStorage();
     draw();
     return;
   }
@@ -1175,6 +1300,7 @@ function applyClick(point) {
     }
   }
 
+  saveLayoutToStorage();
   draw();
 }
 
@@ -1336,6 +1462,7 @@ canvas.addEventListener("contextmenu", (event) => {
 
   if (state.plants.has(cell.key)) {
     state.plants.delete(cell.key);
+    saveLayoutToStorage();
     draw();
     updateHover(point);
     return;
@@ -1356,17 +1483,23 @@ canvas.addEventListener("contextmenu", (event) => {
   }
 
   state.hover = null;
+  saveLayoutToStorage();
   draw();
   updateHover(point);
 });
 
 clearCropsButton.addEventListener("click", () => {
   state.plants.clear();
+  saveLayoutToStorage();
   draw();
 });
 
 copyLayoutButton.addEventListener("click", () => {
   copyLayoutToClipboard();
+});
+
+shareLayoutButton.addEventListener("click", () => {
+  copyShareLink();
 });
 
 togglePanLockButton.addEventListener("click", () => {
@@ -1390,6 +1523,7 @@ resetButton.addEventListener("click", () => {
   state.desertTiles.clear();
   state.hover = null;
   state.hoverPoint = null;
+  saveLayoutToStorage();
   centerView();
 });
 
@@ -1434,6 +1568,10 @@ window.__planner_debug = {
   },
 };
 
+const loadedSharedLayout = loadLayoutFromUrl();
+if (!loadedSharedLayout) {
+  loadLayoutFromStorage();
+}
 renderPalette();
 renderPanLockButton();
 renderStatsPanel();
@@ -1441,3 +1579,7 @@ draw();
 resizeCanvas();
 startCanvasResolutionWatcher();
 window.addEventListener("resize", syncResponsivePanels);
+
+if (loadedSharedLayout) {
+  showCopyFeedback("공유 링크 배치를 불러왔습니다.");
+}
