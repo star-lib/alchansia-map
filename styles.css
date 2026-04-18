@@ -124,13 +124,15 @@ body {
   flex-wrap: wrap;
 }
 
-.crop-palette {
+.crop-palette,
+.tool-palette {
   display: grid;
   gap: 8px;
   margin-bottom: 14px;
 }
 
-.crop-palette.horizontal {
+.crop-palette.horizontal,
+.tool-palette.horizontal {
   grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
 }
 
@@ -502,7 +504,7 @@ body {
   .page-shell {
     width: min(100vw - 20px, 100%);
     padding-top: 24px;
-    padding-bottom: calc(170px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(280px + env(safe-area-inset-bottom, 0px));
   }
 
   .planner-card {
@@ -522,11 +524,11 @@ body {
     gap: 8px;
   }
 
+  .tool-palette.horizontal,
   .crop-palette.horizontal {
     position: fixed;
     left: 10px;
     right: 10px;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     z-index: 30;
     display: flex;
     gap: 10px;
@@ -540,6 +542,15 @@ body {
     box-shadow: 0 18px 40px rgba(66, 43, 14, 0.18);
     backdrop-filter: blur(14px);
     -webkit-overflow-scrolling: touch;
+  }
+
+  .crop-palette.horizontal {
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .tool-palette.horizontal {
+    bottom: calc(128px + env(safe-area-inset-bottom, 0px));
+    z-index: 31;
   }
 
   .crop-button {
@@ -583,7 +594,7 @@ body {
 
   .stats-panel {
     padding: 14px;
-    margin-bottom: calc(130px + env(safe-area-inset-bottom, 0px));
+    margin-bottom: calc(240px + env(safe-area-inset-bottom, 0px));
   }
 
   .slot-row {

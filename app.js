@@ -226,6 +226,11 @@ const expandRingButton = document.getElementById("expand-ring-button");
 const resetButton = document.getElementById("reset-button");
 const clearCropsButton = document.getElementById("clear-crops-button");
 const cropPalette = document.getElementById("crop-palette");
+const toolPalette = document.createElement("div");
+toolPalette.id = "tool-palette";
+toolPalette.className = "tool-palette horizontal";
+toolPalette.setAttribute("aria-label", "맵 도구 선택");
+cropPalette.parentElement.insertBefore(toolPalette, cropPalette);
 const slotTooltip = document.getElementById("slot-tooltip");
 const toggleStatsButton = document.getElementById("toggle-stats-button");
 const productionSummary = document.getElementById("production-summary");
@@ -1173,12 +1178,10 @@ function centerView() {
   draw();
 }
 
-function renderPalette() {
-  const paletteItems = [...CROPS, ...TOOLS];
+function renderPaletteGroup(target, items) {
+  target.innerHTML = "";
 
-  cropPalette.innerHTML = "";
-
-  paletteItems.forEach((crop) => {
+  items.forEach((crop) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = `crop-button${crop.id === state.selectedCropId ? " active" : ""}`;
@@ -1200,8 +1203,13 @@ function renderPalette() {
       renderPalette();
       draw();
     });
-    cropPalette.appendChild(button);
+    target.appendChild(button);
   });
+}
+
+function renderPalette() {
+  renderPaletteGroup(toolPalette, TOOLS);
+  renderPaletteGroup(cropPalette, CROPS);
 }
 
 function renderProductionStats() {
