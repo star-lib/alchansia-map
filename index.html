@@ -3,57 +3,106 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>밭 배치 플래너</title>
+    <title>알칸시아 시뮬레이터</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
     <main class="page-shell">
       <section class="hero">
-        <p class="eyebrow">Field Layout Planner</p>
-        <h1>알칸시아 배치테스트</h1>
+        <p class="eyebrow">Alchansia Simulator</p>
+        <h1>알칸시아 시뮬레이터</h1>
         <div class="legend">
           <span><i class="legend-swatch tile"></i>현재 밭</span>
           <span><i class="legend-swatch add"></i>확장 가능</span>
         </div>
       </section>
 
-      <section class="planner-card">
-        <div class="planner-toolbar">
-          <div>
-            <h2>현재 배치</h2>
-            <p id="field-summary">밭 칸 수 계산 중...</p>
+      <nav class="tab-bar" aria-label="시뮬레이터 탭">
+        <button class="tab-button active" type="button" data-tab="planner">배치 테스트</button>
+        <button class="tab-button" type="button" data-tab="calculator">기댓값 계산기</button>
+      </nav>
+
+      <section id="planner-view" class="tab-view">
+        <section class="planner-card">
+          <div class="planner-toolbar">
+            <div>
+              <h2>현재 배치</h2>
+              <p id="field-summary">밭 계산 중...</p>
+            </div>
+            <div class="toolbar-actions">
+              <button id="toggle-pan-lock-button" type="button">이동 가능</button>
+              <button id="copy-layout-button" type="button">캡쳐</button>
+              <button id="expand-ring-button" type="button">한단계 확장</button>
+              <button id="clear-crops-button" type="button">작물 비우기</button>
+              <button id="reset-button" type="button">초기화</button>
+            </div>
           </div>
-          <div class="toolbar-actions">
-            <button id="toggle-pan-lock-button" type="button">이동 가능</button>
-            <button id="copy-layout-button" type="button">캡쳐</button>
-            <button id="expand-ring-button" type="button">한단계 확장</button>
-            <button id="clear-crops-button" type="button">작물 비우기</button>
-            <button id="reset-button" type="button">초기화</button>
+          <div id="crop-palette" class="crop-palette horizontal" aria-label="씨앗 선택"></div>
+          <div class="canvas-wrap">
+            <canvas
+              id="field-canvas"
+              width="1200"
+              height="900"
+              aria-label="밭 배치 시뮬레이터"
+            ></canvas>
+            <div id="slot-tooltip" class="slot-tooltip" hidden></div>
           </div>
-        </div>
-        <div id="crop-palette" class="crop-palette horizontal" aria-label="작물 선택"></div>
-        <div class="canvas-wrap">
-          <canvas
-            id="field-canvas"
-            width="1200"
-            height="900"
-            aria-label="밭 배치 시뮬레이터"
-          ></canvas>
-          <div id="slot-tooltip" class="slot-tooltip" hidden></div>
-        </div>
-        <section class="stats-panel">
-          <button id="toggle-stats-button" class="stats-toggle" type="button" aria-expanded="true">
-            <span class="stats-title">생산 현황</span>
-            <span id="production-summary">집계 계산 중...</span>
-          </button>
-          <div id="stats-content" class="stats-content">
-            <div id="production-grid" class="production-grid"></div>
-          </div>
-          <p id="copy-feedback" class="copy-feedback" hidden></p>
+          <section class="stats-panel">
+            <button id="toggle-stats-button" class="stats-toggle" type="button" aria-expanded="true">
+              <span class="stats-title">생산 현황</span>
+              <span id="production-summary">집계 계산 중...</span>
+            </button>
+            <div id="stats-content" class="stats-content">
+              <div id="production-grid" class="production-grid"></div>
+            </div>
+            <p id="copy-feedback" class="copy-feedback" hidden></p>
+          </section>
+          <p class="site-note">
+            이 사이트는 알칸시아 제작자가 운영하는 공식 사이트가 아니며 팬이 만든 비공식 시뮬레이터입니다.
+          </p>
         </section>
-        <p class="site-note">
-          이 사이트는 알칸시아 제작자가 운영하는 공식 사이트가 아니며, 팬이 만든 비공식 배치 테스트 도구입니다.
-        </p>
+      </section>
+
+      <section id="calculator-view" class="tab-view" hidden>
+        <section class="calculator-card">
+          <header class="calculator-header">
+            <div>
+              <h2>기댓값 계산기</h2>
+              <p>강화와 조합에 필요한 평균 재료 개수를 계산합니다.</p>
+            </div>
+          </header>
+
+          <section class="calculator-content">
+            <h3>조합 기댓값</h3>
+            <p class="calculator-copy">
+              재료 1과 재료 2의 순서는 상관없고, 두 재료의 강화 합이 필요 강화 수치와 같아야 합니다.
+            </p>
+            <div class="form-grid">
+              <label class="field field-wide">
+                <span>완성품 선택</span>
+                <select id="recipe-target-select"></select>
+              </label>
+              <label class="field">
+                <span>최종 목표 강화</span>
+                <input id="recipe-target-level" type="number" min="0" max="20" value="0" />
+              </label>
+              <label class="field">
+                <span>제작 개수</span>
+                <input id="recipe-target-count" type="number" min="1" max="999" value="1" />
+              </label>
+            </div>
+            <div class="recipe-list-wrap">
+              <h4>강화 단계 선택</h4>
+              <div id="recipe-controls" class="table-stack"></div>
+            </div>
+            <div id="recipe-summary" class="result-card"></div>
+            <div id="recipe-breakdown" class="table-stack"></div>
+            <div class="recipe-list-wrap">
+              <h4>조합법 목록</h4>
+              <div id="recipe-list" class="table-stack"></div>
+            </div>
+          </section>
+        </section>
       </section>
     </main>
 

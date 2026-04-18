@@ -267,11 +267,22 @@ slotPanel.innerHTML = `
 `;
 plannerCard.insertBefore(slotPanel, siteNote);
 const slotList = document.getElementById("slot-list");
+const tabButtons = [...document.querySelectorAll(".tab-button")];
+const plannerView = document.getElementById("planner-view");
+const calculatorView = document.getElementById("calculator-view");
+const recipeTargetSelect = document.getElementById("recipe-target-select");
+const recipeTargetLevelInput = document.getElementById("recipe-target-level");
+const recipeTargetCountInput = document.getElementById("recipe-target-count");
+const recipeControls = document.getElementById("recipe-controls");
+const recipeSummary = document.getElementById("recipe-summary");
+const recipeBreakdown = document.getElementById("recipe-breakdown");
+const recipeList = document.getElementById("recipe-list");
 
 const STORAGE_KEY = "alchansia-layout-v1";
 const SLOT_STORAGE_KEY = "alchansia-layout-slots-v1";
 const SHARE_PARAM = "layout";
 const MAX_LAYOUT_SLOTS = 10;
+const ENHANCE_EXPECTED_COST = 3;
 const CENTER_CELL = { col: 3, row: 3 };
 const BASE_BOUNDS = {
   minCol: 0,
@@ -286,8 +297,11 @@ const state = {
   plants: new Map(),
   desertTiles: new Set(),
   layoutSlots: Array.from({ length: MAX_LAYOUT_SLOTS }, () => null),
+  recipes: [],
+  recipeSelections: new Map(),
   hover: null,
   hoverPoint: null,
+  activeTab: "planner",
   selectedCropId: CROPS[0].id,
   panLocked: true,
   statsCollapsed: window.matchMedia("(max-width: 720px)").matches,
@@ -596,6 +610,435 @@ function renderLayoutSlots() {
     row.append(nameInput, meta, actions);
     slotList.appendChild(row);
   });
+}
+
+function setActiveTab(tabId) {
+  state.activeTab = tabId;
+  plannerView.hidden = tabId !== "planner";
+  calculatorView.hidden = tabId !== "calculator";
+
+  tabButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.tab === tabId);
+  });
+
+  if (tabId === "planner") {
+    resizeCanvas();
+  }
+}
+
+function enhancementExpectedCount(levelGap) {
+  return ENHANCE_EXPECTED_COST ** Math.max(levelGap, 0);
+}
+
+function normalizeItemName(name) {
+  return name.replace(/\s+/g, "").trim();
+}
+
+function parseRecipeCsv(text) {
+  const [headerLine, ...lines] = text.trim().split(/\r?\n/);
+  if (!headerLine) {
+    return [];
+  }
+
+  return lines
+    .map((line) => line.split(",").map((value) => value.trim()))
+    .filter((parts) => parts.length >= 4)
+    .map(([material1, material2, result, requiredLevel]) => ({
+      material1,
+      material2,
+      result,
+      requiredLevel: Number(requiredLevel) || 0,
+      key1: normalizeItemName(material1),
+      key2: normalizeItemName(material2),
+      resultKey: normalizeItemName(result),
+    }));
+}
+
+function getRecipeCollections() {
+  const productKeys = new Set(state.recipes.map((recipe) => recipe.resultKey));
+  const materialKeys = new Set(
+    state.recipes.flatMap((recipe) => [recipe.key1, recipe.key2]),
+  );
+  const baseKeys = [...materialKeys].filter((key) => !productKeys.has(key));
+  const intermediateKeys = [...productKeys].filter((key) => materialKeys.has(key));
+  const finalKeys = [...productKeys].filter((key) => !materialKeys.has(key));
+
+  return {
+    productKeys,
+    materialKeys,
+    baseKeys: new Set(baseKeys),
+    intermediateKeys: new Set(intermediateKeys),
+    finalKeys: new Set(finalKeys),
+  };
+}
+
+function recipeSourceMap() {
+  return new Map(state.recipes.map((recipe) => [recipe.resultKey, recipe]));
+}
+
+function itemDisplayName(itemKey) {
+  const recipeByResult = state.recipes.find((recipe) => recipe.resultKey === itemKey);
+  if (recipeByResult) {
+    return recipeByResult.result;
+  }
+
+  const recipeByMaterial = state.recipes.find(
+    (recipe) => recipe.key1 === itemKey || recipe.key2 === itemKey,
+  );
+  if (!recipeByMaterial) {
+    return itemKey;
+  }
+
+  return recipeByMaterial.key1 === itemKey ? recipeByMaterial.material1 : recipeByMaterial.material2;
+}
+
+function getRecipeSelection(path, requiredLevel) {
+  const existing = state.recipeSelections.get(path);
+  if (existing && existing.firstLevel + existing.secondLevel === requiredLevel) {
+    return existing;
+  }
+
+  const firstLevel = Math.floor(requiredLevel / 2);
+  const nextSelection = {
+    firstLevel,
+    secondLevel: requiredLevel - firstLevel,
+  };
+  state.recipeSelections.set(path, nextSelection);
+  return nextSelection;
+}
+
+function setRecipeSelection(path, requiredLevel, anchor, value) {
+  const safeValue = Math.max(0, Math.min(requiredLevel, Number(value) || 0));
+  const nextSelection =
+    anchor === "first"
+      ? { firstLevel: safeValue, secondLevel: requiredLevel - safeValue }
+      : { firstLevel: requiredLevel - safeValue, secondLevel: safeValue };
+
+  state.recipeSelections.set(path, nextSelection);
+}
+
+function mergeCountMaps(left, right) {
+  const merged = new Map(left);
+  right.forEach((value, key) => {
+    merged.set(key, (merged.get(key) ?? 0) + value);
+  });
+  return merged;
+}
+
+function scaleCountMap(source, factor) {
+  const scaled = new Map();
+  source.forEach((value, key) => {
+    scaled.set(key, value * factor);
+  });
+  return scaled;
+}
+
+function analyzeRequirement(itemKey, usedLevel, recipeMap, path, includeIntermediate = false) {
+  const recipe = recipeMap.get(itemKey);
+  const collections = getRecipeCollections();
+
+  if (!recipe) {
+    return {
+      baseLevels: new Map([[`${itemKey}|${usedLevel}`, enhancementExpectedCount(usedLevel)]]),
+      intermediate: new Map(),
+    };
+  }
+
+  const selection = getRecipeSelection(path, recipe.requiredLevel);
+  const copiesNeeded = enhancementExpectedCount(usedLevel);
+  const firstAnalysis = analyzeRequirement(
+    recipe.key1,
+    selection.firstLevel,
+    recipeMap,
+    `${path}/1`,
+    true,
+  );
+  const secondAnalysis = analyzeRequirement(
+    recipe.key2,
+    selection.secondLevel,
+    recipeMap,
+    `${path}/2`,
+    true,
+  );
+
+  let baseLevels = mergeCountMaps(firstAnalysis.baseLevels, secondAnalysis.baseLevels);
+  baseLevels = scaleCountMap(baseLevels, copiesNeeded);
+
+  let intermediate = mergeCountMaps(firstAnalysis.intermediate, secondAnalysis.intermediate);
+  intermediate = scaleCountMap(intermediate, copiesNeeded);
+
+  if (includeIntermediate && collections.intermediateKeys.has(itemKey)) {
+    const usageKey = `${itemKey}|${usedLevel}`;
+    intermediate.set(usageKey, (intermediate.get(usageKey) ?? 0) + copiesNeeded);
+  }
+
+  return { baseLevels, intermediate };
+}
+
+function groupLevelMap(levelMap) {
+  const grouped = new Map();
+
+  [...levelMap.entries()].forEach(([key, count]) => {
+    const [itemKey, levelText] = key.split("|");
+    const level = Number(levelText) || 0;
+    const entry = grouped.get(itemKey) ?? {
+      displayName: itemDisplayName(itemKey),
+      direct: [],
+      rawTotal: 0,
+    };
+
+    entry.direct.push({ level, count });
+    entry.rawTotal += count * enhancementExpectedCount(level);
+    grouped.set(itemKey, entry);
+  });
+
+  grouped.forEach((entry) => {
+    entry.direct.sort((a, b) => b.level - a.level);
+  });
+
+  return [...grouped.values()].sort((a, b) => a.displayName.localeCompare(b.displayName, "ko"));
+}
+
+function formatLevelLabel(level) {
+  return level > 0 ? `+${level}강` : "노강";
+}
+
+function renderRequirementSection(title, entries) {
+  if (!entries.length) {
+    return `
+      <div class="result-card">
+        <h4>${title}</h4>
+        <p>없음</p>
+      </div>
+    `;
+  }
+
+  const lines = entries
+    .map((entry) => {
+      const directText = entry.direct
+        .map(
+          ({ level, count }) =>
+            `${formatLevelLabel(level)} ${count.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}개`,
+        )
+        .join(" / ");
+
+      const normalizedText = entry.rawTotal.toLocaleString("ko-KR", {
+        maximumFractionDigits: 2,
+      });
+
+      return `
+        <div class="requirement-line">
+          <p><strong>${entry.displayName}</strong></p>
+          <p>강화된 재료 필요 개수 : ${directText}</p>
+          <p>노강 환산 개수 : ${normalizedText}개</p>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="result-card">
+      <h4>${title}</h4>
+      ${lines}
+    </div>
+  `;
+}
+
+function renderRecipeSelectionNode(recipe, recipeMap, path) {
+  const selection = getRecipeSelection(path, recipe.requiredLevel);
+  const node = document.createElement("article");
+  node.className = "recipe-node";
+  node.innerHTML = `
+    <div class="recipe-node-header">
+      <h5>${recipe.result}</h5>
+      <p>필요 강화 합 ${recipe.requiredLevel}</p>
+    </div>
+    <div class="recipe-choice-grid">
+      <label class="field">
+        <span>${recipe.material1} 강화</span>
+        <select data-path="${path}" data-anchor="first"></select>
+      </label>
+      <label class="field">
+        <span>${recipe.material2} 강화</span>
+        <select data-path="${path}" data-anchor="second"></select>
+      </label>
+    </div>
+    <p class="recipe-choice-note">${recipe.material1} +${selection.firstLevel} / ${recipe.material2} +${selection.secondLevel}</p>
+  `;
+
+  const [firstSelect, secondSelect] = [...node.querySelectorAll("select")];
+  const options = Array.from({ length: recipe.requiredLevel + 1 }, (_, level) => {
+    const option = document.createElement("option");
+    option.value = String(level);
+    option.textContent = `+${level}`;
+    return option;
+  });
+  options.forEach((option) => firstSelect.appendChild(option.cloneNode(true)));
+  options.forEach((option) => secondSelect.appendChild(option.cloneNode(true)));
+  firstSelect.value = String(selection.firstLevel);
+  secondSelect.value = String(selection.secondLevel);
+
+  const handleSelectionChange = (event) => {
+    setRecipeSelection(path, recipe.requiredLevel, event.target.dataset.anchor, event.target.value);
+    renderRecipeCalculator();
+  };
+  firstSelect.addEventListener("change", handleSelectionChange);
+  secondSelect.addEventListener("change", handleSelectionChange);
+
+  const children = document.createElement("div");
+  children.className = "recipe-children";
+
+  const childRecipe1 = recipeMap.get(recipe.key1);
+  if (childRecipe1) {
+    children.appendChild(renderRecipeSelectionNode(childRecipe1, recipeMap, `${path}/1`));
+  }
+
+  const childRecipe2 = recipeMap.get(recipe.key2);
+  if (childRecipe2) {
+    children.appendChild(renderRecipeSelectionNode(childRecipe2, recipeMap, `${path}/2`));
+  }
+
+  if (children.childElementCount) {
+    node.appendChild(children);
+  }
+
+  return node;
+}
+
+function renderRecipeTable() {
+  if (!state.recipes.length) {
+    recipeList.innerHTML = `<div class="result-card"><p>조합법을 불러오는 중입니다.</p></div>`;
+    return;
+  }
+
+  const rows = state.recipes
+    .map(
+      (recipe) => `
+        <tr>
+          <td>${recipe.material1}</td>
+          <td>${recipe.material2}</td>
+          <td>${recipe.result}</td>
+          <td>${recipe.requiredLevel}</td>
+        </tr>
+      `,
+    )
+    .join("");
+
+  recipeList.innerHTML = `
+    <table class="mini-table">
+      <thead>
+        <tr>
+          <th>재료 1</th>
+          <th>재료 2</th>
+          <th>완성품</th>
+          <th>필요 강화 합</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+  `;
+}
+
+function renderRecipeCalculator() {
+  if (!state.recipes.length) {
+    recipeTargetSelect.innerHTML = `<option>조합법 로딩 중...</option>`;
+    recipeSummary.innerHTML = `<p>조합법을 불러오는 중입니다.</p>`;
+    recipeControls.innerHTML = "";
+    recipeBreakdown.innerHTML = "";
+    renderRecipeTable();
+    return;
+  }
+
+  if (!recipeTargetSelect.options.length) {
+    const collections = getRecipeCollections();
+    const intermediateOptions = state.recipes
+      .filter((recipe) => collections.intermediateKeys.has(recipe.resultKey))
+      .map((recipe) => `<option value="${recipe.resultKey}">${recipe.result}</option>`)
+      .join("");
+    const finalOptions = state.recipes
+      .filter((recipe) => collections.finalKeys.has(recipe.resultKey))
+      .map((recipe) => `<option value="${recipe.resultKey}">${recipe.result}</option>`)
+      .join("");
+
+    recipeTargetSelect.innerHTML = `
+      <optgroup label="중간재료">${intermediateOptions}</optgroup>
+      <optgroup label="완성품">${finalOptions}</optgroup>
+    `;
+  }
+
+  const selectedKey = recipeTargetSelect.value || state.recipes[0].resultKey;
+  recipeTargetSelect.value = selectedKey;
+  const targetLevel = Math.max(0, Number(recipeTargetLevelInput.value) || 0);
+  const targetCount = Math.max(1, Number(recipeTargetCountInput.value) || 1);
+  recipeTargetLevelInput.value = String(targetLevel);
+  recipeTargetCountInput.value = String(targetCount);
+  const recipeMap = recipeSourceMap();
+  const recipe = recipeMap.get(selectedKey);
+
+  if (!recipe) {
+    recipeSummary.innerHTML = `<p>선택한 완성품의 계산 정보를 찾지 못했습니다.</p>`;
+    recipeControls.innerHTML = "";
+    recipeBreakdown.innerHTML = "";
+    return;
+  }
+
+  recipeControls.innerHTML = "";
+  recipeControls.appendChild(renderRecipeSelectionNode(recipe, recipeMap, selectedKey));
+
+  const rootSelection = getRecipeSelection(selectedKey, recipe.requiredLevel);
+  const finalCopiesNeeded = enhancementExpectedCount(targetLevel) * targetCount;
+  const topMaterialNeeds = [
+    {
+      name: recipe.material1,
+      level: rootSelection.firstLevel,
+      count: enhancementExpectedCount(rootSelection.firstLevel) * finalCopiesNeeded,
+    },
+    {
+      name: recipe.material2,
+      level: rootSelection.secondLevel,
+      count: enhancementExpectedCount(rootSelection.secondLevel) * finalCopiesNeeded,
+    },
+  ];
+  const requirement = analyzeRequirement(selectedKey, targetLevel, recipeMap, selectedKey, false);
+  const baseEntries = groupLevelMap(requirement.baseLevels);
+  const intermediateEntries = groupLevelMap(requirement.intermediate);
+  recipeSummary.innerHTML = `
+    <h4><strong>${recipe.result}+${targetLevel}</strong></h4>
+    <p>제작 개수 : ${targetCount.toLocaleString("ko-KR")}개</p>
+    <p>필요 <strong>${recipe.result}+0</strong> : ${finalCopiesNeeded.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}개</p>
+    <p>상위 재료 필요 개수: ${topMaterialNeeds
+      .map(
+        (material) =>
+          `<strong>${material.name}</strong> ${formatLevelLabel(material.level)} ${material.count.toLocaleString("ko-KR", {
+            maximumFractionDigits: 2,
+          })}개`,
+      )
+      .join(" / ")}</p>
+  `;
+
+  recipeBreakdown.innerHTML = `
+    ${renderRequirementSection("필요 중간 재료", intermediateEntries)}
+    ${renderRequirementSection("필요 기본 재료", baseEntries)}
+  `;
+
+  renderRecipeTable();
+}
+
+async function loadRecipes() {
+  try {
+    const response = await fetch("./조합법.csv", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error("Recipe csv load failed");
+    }
+
+    state.recipes = parseRecipeCsv(await response.text());
+    recipeTargetSelect.innerHTML = "";
+    renderRecipeCalculator();
+  } catch (error) {
+    recipeSummary.innerHTML = `<p>조합법.csv를 불러오지 못했습니다.</p>`;
+    recipeBreakdown.innerHTML = "";
+    recipeList.innerHTML = "";
+  }
 }
 
 function loadLayoutFromStorage() {
@@ -1695,6 +2138,24 @@ clearCropsButton.addEventListener("click", () => {
   draw();
 });
 
+tabButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    setActiveTab(button.dataset.tab);
+  });
+});
+
+recipeTargetSelect.addEventListener("change", () => {
+  renderRecipeCalculator();
+});
+
+recipeTargetLevelInput.addEventListener("input", () => {
+  renderRecipeCalculator();
+});
+
+recipeTargetCountInput.addEventListener("input", () => {
+  renderRecipeCalculator();
+});
+
 copyLayoutButton.addEventListener("click", () => {
   copyLayoutToClipboard();
 });
@@ -1776,13 +2237,16 @@ if (!loadedSharedLayout) {
   loadLayoutFromStorage();
 }
 copyLayoutButton.textContent = "캡쳐";
+setActiveTab("planner");
 renderPalette();
 renderPanLockButton();
 renderStatsPanel();
 renderLayoutSlots();
+renderRecipeCalculator();
 draw();
 resizeCanvas();
 startCanvasResolutionWatcher();
+loadRecipes();
 window.addEventListener("resize", syncResponsivePanels);
 window.addEventListener("hashchange", () => {
   applySharedLayoutFromCurrentUrl(true);

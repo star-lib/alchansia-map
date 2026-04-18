@@ -91,6 +91,35 @@ body {
   border: 2px dashed var(--add-edge);
 }
 
+.tab-bar {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.tab-button {
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 700;
+  color: var(--text-main);
+  background: rgba(255, 252, 245, 0.8);
+  border: 1px solid rgba(92, 66, 37, 0.12);
+  box-shadow: 0 12px 24px rgba(66, 43, 14, 0.08);
+  cursor: pointer;
+}
+
+.tab-button.active {
+  color: #fffaf2;
+  background: #7f6a49;
+}
+
+.tab-view[hidden] {
+  display: none;
+}
+
 .planner-card {
   padding: 22px;
   border: 1px solid var(--card-border);
@@ -510,6 +539,173 @@ body {
   cursor: default;
 }
 
+.calculator-card {
+  padding: 22px;
+  border: 1px solid var(--card-border);
+  border-radius: 28px;
+  background: var(--card);
+  box-shadow: var(--shadow);
+}
+
+.calculator-header {
+  margin-bottom: 18px;
+}
+
+.calculator-header h2,
+.calculator-header p,
+.calculator-content h3,
+.recipe-list-wrap h4 {
+  margin: 0;
+}
+
+.calculator-header p,
+.calculator-copy {
+  color: var(--text-soft);
+}
+
+.calculator-content {
+  display: grid;
+  gap: 14px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.field-wide {
+  grid-column: 1 / -1;
+}
+
+.field span {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(92, 66, 37, 0.16);
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--text-main);
+  font: inherit;
+}
+
+.result-card {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(92, 66, 37, 0.12);
+}
+
+.result-card h4,
+.result-card p {
+  margin: 0;
+}
+
+.requirement-line + .requirement-line {
+  margin-top: 12px;
+}
+
+.requirement-line p + p {
+  margin-top: 4px;
+}
+
+.result-card p + p,
+.result-card h4 + p {
+  margin-top: 6px;
+}
+
+.table-stack {
+  display: grid;
+  gap: 10px;
+}
+
+.mini-table {
+  width: 100%;
+  border-collapse: collapse;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.mini-table th,
+.mini-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid rgba(92, 66, 37, 0.1);
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.mini-table th {
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.mini-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.recipe-list-wrap {
+  display: grid;
+  gap: 10px;
+}
+
+.recipe-node {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(92, 66, 37, 0.12);
+}
+
+.recipe-node-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.recipe-node-header h5,
+.recipe-node-header p {
+  margin: 0;
+}
+
+.recipe-node-header p {
+  color: var(--text-soft);
+  font-size: 0.84rem;
+}
+
+.recipe-choice-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.recipe-choice-note {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.84rem;
+}
+
+.recipe-children {
+  display: grid;
+  gap: 10px;
+  padding-left: 14px;
+  border-left: 2px solid rgba(92, 66, 37, 0.1);
+}
+
 .site-note {
   margin: 16px 4px 0;
   color: var(--text-soft);
@@ -528,11 +724,17 @@ body {
   .planner-card {
     padding: 16px;
     border-radius: 22px;
+    backdrop-filter: none;
   }
 
   .planner-toolbar {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .form-grid,
+  .recipe-choice-grid {
+    grid-template-columns: 1fr;
   }
 
   .toolbar-actions {
@@ -574,28 +776,29 @@ body {
 
   .crop-button {
     flex: 0 0 82px;
-    min-height: 92px;
-    padding: 8px 6px;
-    gap: 6px;
+    min-height: 74px;
+    padding: 7px 6px 6px;
+    gap: 4px;
     align-items: center;
   }
 
   .crop-button-top {
     flex-direction: column;
-    gap: 6px;
+    gap: 4px;
     justify-content: flex-start;
   }
 
   .crop-button-label {
     align-items: center;
-    gap: 2px;
+    gap: 0;
   }
 
   .crop-button strong {
     font-size: 0.7rem;
-    line-height: 1.15;
+    line-height: 1;
     text-align: center;
     word-break: keep-all;
+    margin: 0;
   }
 
   .crop-yield {
