@@ -734,33 +734,26 @@ function mergeCountMaps(left, right) {
   return merged;
 }
 
-function scaleCountMap(source, factor) {
-  const scaled = new Map();
-  source.forEach((value, key) => {
-    scaled.set(key, value * factor);
-  });
-  return scaled;
-}
-
-function analyzeRequirement(itemKey, usedLevel, recipeMap, path, includeIntermediate = false) {
+function analyzeRequirement(itemKey, usedLevel, recipeMap, path, includeIntermediate = false, directCount = 1) {
   const recipe = recipeMap.get(itemKey);
   const collections = getRecipeCollections();
 
   if (!recipe) {
     return {
-      baseLevels: new Map([[`${itemKey}|${usedLevel}`, enhancementExpectedCount(usedLevel)]]),
+      baseLevels: new Map([[`${itemKey}|${usedLevel}`, directCount]]),
       intermediate: new Map(),
     };
   }
 
   const selection = getRecipeSelection(path, recipe.requiredLevel);
-  const copiesNeeded = enhancementExpectedCount(usedLevel);
+  const baseCopiesNeeded = directCount * enhancementExpectedCount(usedLevel);
   const firstAnalysis = analyzeRequirement(
     recipe.key1,
     selection.firstLevel,
     recipeMap,
     `${path}/1`,
     true,
+    baseCopiesNeeded,
   );
   const secondAnalysis = analyzeRequirement(
     recipe.key2,
@@ -768,17 +761,16 @@ function analyzeRequirement(itemKey, usedLevel, recipeMap, path, includeIntermed
     recipeMap,
     `${path}/2`,
     true,
+    baseCopiesNeeded,
   );
 
   let baseLevels = mergeCountMaps(firstAnalysis.baseLevels, secondAnalysis.baseLevels);
-  baseLevels = scaleCountMap(baseLevels, copiesNeeded);
 
   let intermediate = mergeCountMaps(firstAnalysis.intermediate, secondAnalysis.intermediate);
-  intermediate = scaleCountMap(intermediate, copiesNeeded);
 
   if (includeIntermediate && collections.intermediateKeys.has(itemKey)) {
     const usageKey = `${itemKey}|${usedLevel}`;
-    intermediate.set(usageKey, (intermediate.get(usageKey) ?? 0) + copiesNeeded);
+    intermediate.set(usageKey, (intermediate.get(usageKey) ?? 0) + directCount);
   }
 
   return { baseLevels, intermediate };
@@ -1000,15 +992,15 @@ function renderRecipeCalculator() {
     {
       name: recipe.material1,
       level: rootSelection.firstLevel,
-      count: enhancementExpectedCount(rootSelection.firstLevel) * finalCopiesNeeded,
+      count: finalCopiesNeeded,
     },
     {
       name: recipe.material2,
       level: rootSelection.secondLevel,
-      count: enhancementExpectedCount(rootSelection.secondLevel) * finalCopiesNeeded,
+      count: finalCopiesNeeded,
     },
   ];
-  const requirement = analyzeRequirement(selectedKey, targetLevel, recipeMap, selectedKey, false);
+  const requirement = analyzeRequirement(selectedKey, targetLevel, recipeMap, selectedKey, false, targetCount);
   const baseEntries = groupLevelMap(requirement.baseLevels);
   const intermediateEntries = groupLevelMap(requirement.intermediate);
   recipeSummary.innerHTML = `
