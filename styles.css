@@ -912,8 +912,11 @@ body {
 }
 
 .skill-summary-stats {
+  flex: 1 1 520px;
   gap: 16px;
   flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
   color: var(--text-soft);
 }
 
@@ -968,6 +971,7 @@ body {
 
 .skill-summary-meta {
   align-content: center;
+  margin-left: auto;
 }
 
 .skill-reset-button {

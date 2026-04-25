@@ -2033,7 +2033,7 @@ function recipeSelectOptions(selectedValue) {
     .join("");
 
   const html = `
-    <optgroup label="???">${potionOptions}</optgroup>
+    <optgroup label="양조">${potionOptions}</optgroup>
   `;
 
   return html.replace(`value="${selectedValue}"`, `value="${selectedValue}" selected`);
@@ -2596,9 +2596,9 @@ function buildTimeNotes(mode, itemA, itemB, flameReduction) {
     },
   ];
 
-  const impactSkills = ["?? ??"];
+  const impactSkills = ["불꽃 숙련"];
   notes.push({
-    title: "?? ?? ?? ??",
+    title: "현재 작업 영향 스킬",
     body: impactSkills.map((skill) => `<strong>${skill}</strong>`).join(", "),
   });
 
@@ -2606,13 +2606,6 @@ function buildTimeNotes(mode, itemA, itemB, flameReduction) {
     notes.push({
       title: "불꽃 숙련 적용",
       body: `가마솥 강화 ${state.timeCalculatorInputs.cauldronEnhancement} 기준으로 총 ${formatReductionPercent(flameReduction)} 감소가 반영됐습니다.`,
-    });
-  }
-
-  if (mode === "enhancement") {
-    notes.push({
-      title: "강화 작업 주의",
-      body: "같은 아이템을 합칠 때는 두 재료 시간이 같아서 계산이 단순합니다.",
     });
   }
 
