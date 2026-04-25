@@ -2,3 +2,18 @@ node_modules/
 output/
 server.log
 server.err.log
+
+# Extracted Alcanthia game data and captures
+alcanthia_assets/
+items/
+alcanthia_base.apk
+alcanthia_index.js
+alcanthia_item_sprites.json
+alcanthia_assets_manifest.csv
+alcanthia_assets_summary.json
+ALCANTHIA_ASSETS.md
+alcanthia_capture.png
+alcanthia_capture_raw.png
+alcanthia_panel_crop.png
+alcanthia_seed_crop.png
+alcanthia_topbar_crop.png

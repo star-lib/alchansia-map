@@ -1,0 +1,150 @@
+[
+  {
+    "name": "가위손",
+    "id": "scissors_hand",
+    "file": "./skill_icons/scissors_hand.png",
+    "url": "https://game.alcanthia.com/assets/skills/scissors_hand.png"
+  },
+  {
+    "name": "혼령낫",
+    "id": "magic_scythe",
+    "file": "./skill_icons/magic_scythe.png",
+    "url": "https://game.alcanthia.com/assets/skills/magic_scythe.png"
+  },
+  {
+    "name": "토양 숙련",
+    "id": "soil_mastery",
+    "file": "./skill_icons/soil_mastery.png",
+    "url": "https://game.alcanthia.com/assets/skills/soil_mastery.png"
+  },
+  {
+    "name": "뿌리 지배",
+    "id": "root_dominion",
+    "file": "./skill_icons/root_dominion.png",
+    "url": "https://game.alcanthia.com/assets/skills/root_dominion.png"
+  },
+  {
+    "name": "정령의 낫",
+    "id": "spirit_scythe",
+    "file": "./skill_icons/spirit_scythe.png",
+    "url": "https://game.alcanthia.com/assets/skills/spirit_scythe.png"
+  },
+  {
+    "name": "시간 숙련",
+    "id": "time_mastery",
+    "file": "./skill_icons/time_mastery.png",
+    "url": "https://game.alcanthia.com/assets/skills/time_mastery.png"
+  },
+  {
+    "name": "과밀 저항",
+    "id": "overcrowding_resist",
+    "file": "./skill_icons/overcrowding_resist.png",
+    "url": "https://game.alcanthia.com/assets/skills/overcrowding_resist.png"
+  },
+  {
+    "name": "요정의 주머니",
+    "id": "fairy_pocket",
+    "file": "./skill_icons/fairy_pocket.png",
+    "url": "https://game.alcanthia.com/assets/skills/fairy_pocket.png"
+  },
+  {
+    "name": "자연의 축복",
+    "id": "natures_blessing",
+    "file": "./skill_icons/natures_blessing.png",
+    "url": "https://game.alcanthia.com/assets/skills/natures_blessing.png"
+  },
+  {
+    "name": "단단한 줄기",
+    "id": "sturdy_stem",
+    "file": "./skill_icons/sturdy_stem.png",
+    "url": "https://game.alcanthia.com/assets/skills/sturdy_stem.png"
+  },
+  {
+    "name": "부활",
+    "id": "revival",
+    "file": "./skill_icons/revival.png",
+    "url": "https://game.alcanthia.com/assets/skills/revival.png"
+  },
+  {
+    "name": "맥읽기",
+    "id": "vein_reading",
+    "file": "./skill_icons/vein_reading.png",
+    "url": "https://game.alcanthia.com/assets/skills/vein_reading.png"
+  },
+  {
+    "name": "계승",
+    "id": "succession",
+    "file": "./skill_icons/succession.png",
+    "url": "https://game.alcanthia.com/assets/skills/succession.png"
+  },
+  {
+    "name": "풍요의 손길",
+    "id": "touch_of_plenty",
+    "file": "./skill_icons/touch_of_plenty.png",
+    "url": "https://game.alcanthia.com/assets/skills/touch_of_plenty.png"
+  },
+  {
+    "name": "유전",
+    "id": "inheritance",
+    "file": "./skill_icons/inheritance.png",
+    "url": "https://game.alcanthia.com/assets/skills/inheritance.png"
+  },
+  {
+    "name": "불꽃 숙련",
+    "id": "flame_mastery",
+    "file": "./skill_icons/flame_mastery.png",
+    "url": "https://game.alcanthia.com/assets/skills/flame_mastery.png"
+  },
+  {
+    "name": "유령 깔대기",
+    "missing": true
+  },
+  {
+    "name": "행운 숙련",
+    "id": "luck_mastery",
+    "file": "./skill_icons/luck_mastery.png",
+    "url": "https://game.alcanthia.com/assets/skills/luck_mastery.png"
+  },
+  {
+    "name": "금속 단련",
+    "id": "metal_tempering",
+    "file": "./skill_icons/metal_tempering.png",
+    "url": "https://game.alcanthia.com/assets/skills/metal_tempering.png"
+  },
+  {
+    "name": "불꽃의 정령",
+    "id": "flame_spirit",
+    "file": "./skill_icons/flame_spirit.png",
+    "url": "https://game.alcanthia.com/assets/skills/flame_spirit.png"
+  },
+  {
+    "name": "생명의 씨앗",
+    "id": "seed_ingredient",
+    "file": "./skill_icons/seed_ingredient.png",
+    "url": "https://game.alcanthia.com/assets/skills/seed_ingredient.png"
+  },
+  {
+    "name": "피어나는 손",
+    "id": "blooming_hand",
+    "file": "./skill_icons/blooming_hand.png",
+    "url": "https://game.alcanthia.com/assets/skills/blooming_hand.png"
+  },
+  {
+    "name": "심지 숙련",
+    "id": "wick_mastery",
+    "file": "./skill_icons/wick_mastery.png",
+    "url": "https://game.alcanthia.com/assets/skills/wick_mastery.png"
+  },
+  {
+    "name": "화염 고삐",
+    "id": "fine_tuning",
+    "file": "./skill_icons/fine_tuning.png",
+    "url": "https://game.alcanthia.com/assets/skills/fine_tuning.png"
+  },
+  {
+    "name": "연성의 맥",
+    "id": "auto_buy_stone",
+    "file": "./skill_icons/auto_buy_stone.png",
+    "url": "https://game.alcanthia.com/assets/skills/auto_buy_stone.png"
+  }
+]

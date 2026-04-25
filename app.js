@@ -13,6 +13,7 @@ const CROPS = [
     id: "herb",
     name: "약초",
     short: "약",
+    iconPath: "./alcanthia_assets/seed/herb_seed.png",
     color: "#69a84a",
     accentColor: "#8d6bc9",
     summary: "첫 물 1회, 1회 수확",
@@ -27,6 +28,7 @@ const CROPS = [
     id: "red-leaf",
     name: "붉은꽃",
     short: "붉",
+    iconPath: "./alcanthia_assets/seed/red_flower_seed.png",
     color: "#d63f3f",
     accentColor: "#ff8e8e",
     summary: "주기적 물 필요",
@@ -40,6 +42,7 @@ const CROPS = [
     id: "water-flower",
     name: "이슬뿌리",
     short: "이",
+    iconPath: "./alcanthia_assets/seed/dew_root_bulb.png",
     color: "#4aa8e8",
     accentColor: "#9fd8ff",
     summary: "체비쇼프 2칸 물 공급",
@@ -54,6 +57,7 @@ const CROPS = [
     id: "moss",
     name: "푸른이끼",
     short: "푸",
+    iconPath: "./alcanthia_assets/seed/blue_moss_spore.png",
     color: "#2e9a90",
     accentColor: "#7bd8c2",
     summary: "첫 물 1회",
@@ -67,6 +71,7 @@ const CROPS = [
     id: "poison-flower",
     name: "독꽃",
     short: "독",
+    iconPath: "./alcanthia_assets/seed/poison_flower_seed.png",
     color: "#7d49ba",
     accentColor: "#c89cf0",
     summary: "독 면역, 인접 대각선 땅 중독",
@@ -82,6 +87,7 @@ const CROPS = [
     id: "mushroom",
     name: "달빛버섯",
     short: "달",
+    iconPath: "./alcanthia_assets/seed/moonlight_mushroom_seed.png",
     color: "#fff8dd",
     accentColor: "#f1df8f",
     summary: "첫 물 1회, 1회 수확",
@@ -96,6 +102,7 @@ const CROPS = [
     id: "star-flower",
     name: "별꽃",
     short: "별",
+    iconPath: "./alcanthia_assets/seed/star_flower_seed.png",
     color: "#7dbf3f",
     accentColor: "#f2da55",
     summary: "주기적 물 필요",
@@ -109,6 +116,7 @@ const CROPS = [
     id: "fire-flower",
     name: "불씨덩굴",
     short: "불",
+    iconPath: "./alcanthia_assets/seed/fire_vine_seed.png",
     color: "#e3481e",
     accentColor: "#ffb347",
     summary: "물 공급 시 사망",
@@ -122,6 +130,7 @@ const CROPS = [
     id: "wind-flower",
     name: "바람꽃",
     short: "바",
+    iconPath: "./alcanthia_assets/seed/wind_blossom_seed.png",
     color: "#cbefff",
     accentColor: "#eefaff",
     summary: "시간당 생산량 2",
@@ -135,6 +144,7 @@ const CROPS = [
     id: "phantom-fern",
     name: "환영고사리",
     short: "환",
+    iconPath: "./alcanthia_assets/seed/illusion_fern_seed.png",
     color: "#78b48d",
     accentColor: "#c9f0da",
     summary: "시간당 생산량 7.5",
@@ -148,6 +158,7 @@ const CROPS = [
     id: "sunset-tree",
     name: "노을목",
     short: "노",
+    iconPath: "./alcanthia_assets/seed/sunset_bush_seed.png",
     color: "#c87442",
     accentColor: "#f2bb7d",
     summary: "시간당 생산량 6",
@@ -161,6 +172,7 @@ const CROPS = [
     id: "sun-flower",
     name: "햇살꽃",
     short: "햇",
+    iconPath: "./alcanthia_assets/seed/sunlight_flower_seed.png",
     color: "#f2c230",
     accentColor: "#fff09f",
     summary: "주기적 물 필요, 생산속도 +30%",
@@ -215,6 +227,7 @@ const TOOLS = [
 ];
 
 const cropById = new Map([...CROPS, ...TOOLS].map((crop) => [crop.id, crop]));
+const cropImageCache = new Map();
 const CAULDRON_TIERS = [
   { id: "gold", name: "금 가마솥", icon: "금", iconClass: "gold" },
   { id: "silver", name: "은 가마솥", icon: "은", iconClass: "silver" },
@@ -472,6 +485,7 @@ const timeDurationTableBody = document.getElementById("time-duration-table-body"
 const skillTreeSummary = document.getElementById("skill-tree-summary");
 const skillCategoryTabs = document.getElementById("skill-category-tabs");
 const skillTreeGrid = document.getElementById("skill-tree-grid");
+const skillDetailDock = document.getElementById("skill-detail-dock");
 const spCurrentLevelInput = document.getElementById("sp-current-level");
 const spCurrentExpInput = document.getElementById("sp-current-exp");
 const spPotionLevelInput = document.getElementById("sp-potion-level");
@@ -497,6 +511,9 @@ const CAULDRON_SLOT_STORAGE_KEY = "alchansia-cauldron-slots-v1";
 const TIME_CALCULATOR_STORAGE_KEY = "alchansia-time-calculator-v1";
 const SKILL_TREE_STORAGE_KEY = "alchansia-skill-tree-v1";
 const SKILL_POINT_STORAGE_KEY = "alchansia-skill-points-v1";
+const TIME_RELEVANT_SKILL_KEYS = {
+  flameMastery: "불꽃 숙련",
+};
 const SHARE_PARAM = "layout";
 const MAX_LAYOUT_SLOTS = 10;
 const ENHANCE_EXPECTED_COST = 3;
@@ -536,6 +553,74 @@ const SKILL_CATEGORY_THEMES = {
     accent: "#69384f",
   },
 };
+const SKILL_ICON_PATHS = {
+  "가위손": "./skill_icons/scissors_hand.png",
+  "혼령낫": "./skill_icons/magic_scythe.png",
+  "정령의 낫": "./skill_icons/spirit_scythe.png",
+  "요정의 주머니": "./skill_icons/fairy_pocket.png",
+  "토양 숙련": "./skill_icons/soil_mastery.png",
+  "시간 숙련": "./skill_icons/time_mastery.png",
+  "자연의 축복": "./skill_icons/natures_blessing.png",
+  "부활": "./skill_icons/revival.png",
+  "풍요의 손길": "./skill_icons/touch_of_plenty.png",
+  "계승": "./skill_icons/succession.png",
+  "뿌리 지배": "./skill_icons/root_dominion.png",
+  "과밀 저항": "./skill_icons/overcrowding_resist.png",
+  "단단한 줄기": "./skill_icons/sturdy_stem.png",
+  "맥읽기": "./skill_icons/vein_reading.png",
+  "유전": "./skill_icons/inheritance.png",
+  "불꽃 숙련": "./skill_icons/flame_mastery.png",
+  "유령 깔대기": "./skill_icons/brewing_funnel.png",
+  "행운 숙련": "./skill_icons/luck_mastery.png",
+  "금속 단련": "./skill_icons/metal_tempering.png",
+  "불꽃의 정령": "./skill_icons/flame_spirit.png",
+  "생명의 씨앗": "./skill_icons/seed_ingredient.png",
+  "피어나는 손": "./skill_icons/blooming_hand.png",
+  "심지 숙련": "./skill_icons/wick_mastery.png",
+  "화염 고삐": "./skill_icons/fine_tuning.png",
+  "연성의 맥": "./skill_icons/auto_buy_stone.png",
+};
+Object.assign(SKILL_ICON_PATHS, {
+  "유대의 룬": "./skill_icons/bond_rune.png",
+  "부유술": "./skill_icons/levitation.png",
+  "귀환 마법진": "./skill_icons/return_portal.png",
+  "수정구 점술": "./skill_icons/crystal_divination.png",
+  "서약의 인장": "./skill_icons/oath_seal.png",
+  "영혼 대면": "./skill_icons/soul_confrontation.png",
+  "까마귀 길잡이": "./skill_icons/extra_loot.png",
+  "차원 교차": "./skill_icons/potion_preserve.png",
+  "유물 숙련": "./skill_icons/relic_mastery.png",
+  "무소유": "./skill_icons/overflow_discard.png",
+  "혈맹": "./skill_icons/unlock_guild.png",
+  "마나 그릇": "./skill_icons/mana_vessel.png",
+  "깊은 흡수": "./skill_icons/deep_absorption.png",
+  "마나 숙련": "./skill_icons/mana_mastery.png",
+  "생기 착취": "./skill_icons/life_drain.png",
+  "마나 증류": "./skill_icons/mana_siphon.png",
+  "마나 응축": "./skill_icons/mana_efficiency.png",
+  "생명의 순환": "./skill_icons/cycle_of_life.png",
+  "명상": "./skill_icons/meditation.png",
+});
+const SKILL_COLUMN_OFFSETS = {
+  "계승": -1,
+  "풍요의 손길": -1,
+};
+const SKILL_FIXED_COLUMNS = {
+  "유전": 1,
+  "불꽃 숙련": 1,
+  "마나 그릇": 1,
+};
+for (const theme of Object.values(SKILL_CATEGORY_THEMES)) {
+  if (theme.treeId === "farming") {
+    theme.icon = "./skill_icons/scissors_hand.png";
+  } else if (theme.treeId === "brewing") {
+    theme.icon = "./skill_icons/flame_mastery.png";
+  } else if (theme.treeId === "mana") {
+    theme.icon = "./skill_icons/mana_vessel.png";
+  } else if (theme.treeId === "contract") {
+    theme.icon = "./skill_icons/bond_rune.png";
+  }
+}
 const SKILL_LANE_LABELS = ["기초", "전개", "심화", "핵심", "완성", "초월"];
 const CENTER_CELL = { col: 3, row: 3 };
 const BASE_BOUNDS = {
@@ -561,6 +646,7 @@ const state = {
   skillLookup: new Map(),
   skillLevels: new Map(),
   activeSkillCategory: "",
+  selectedSkillKey: "",
   cauldrons: Object.fromEntries(CAULDRON_TIERS.map((tier) => [tier.id, []])),
   recipeSelections: new Map(),
   hover: null,
@@ -591,6 +677,9 @@ const state = {
     itemBEnhancement: 0,
     tableFilter: "",
   },
+  timeBrewingRecipes: [],
+  timeCraftRecipes: [],
+  timeRecipeByKey: new Map(),
   view: {
     scale: 1,
     offsetX: 0,
@@ -1243,6 +1332,24 @@ function normalizeSkillName(name) {
   return SKILL_NAME_ALIASES[normalized] ?? normalized;
 }
 
+function preloadCropImages() {
+  CROPS.forEach((crop) => {
+    if (!crop.iconPath || cropImageCache.has(crop.id)) {
+      return;
+    }
+
+    const image = new Image();
+    image.decoding = "async";
+    image.loading = "eager";
+    image.src = crop.iconPath;
+    image.addEventListener("load", () => {
+      draw();
+      renderPalette();
+    });
+    cropImageCache.set(crop.id, image);
+  });
+}
+
 function parseSkillPrerequisites(text) {
   if (!text || text.trim() === "-") {
     return [];
@@ -1276,11 +1383,13 @@ function parseSkillCsv(text) {
   return lines
     .map(parseCsvLine)
     .filter((parts) => parts.length >= 5)
+    .filter((parts) => String(parts[0] || "").trim() && String(parts[1] || "").trim())
     .map(([category, name, maxLevel, prerequisites, description], index) => ({
       id: `skill-${index}-${normalizeSkillName(name)}`,
       key: normalizeSkillName(name),
       category: String(category || "").trim(),
       name: String(name || "").trim(),
+      iconPath: SKILL_ICON_PATHS[String(name || "").trim()] ?? "",
       maxLevel: Math.max(1, Number(maxLevel) || 1),
       prerequisites: parseSkillPrerequisites(prerequisites),
       description: String(description || "").trim(),
@@ -1291,6 +1400,7 @@ function currentSkillTreePayload() {
   return {
     levels: [...state.skillLevels.entries()],
     activeCategory: state.activeSkillCategory,
+    selectedSkillKey: state.selectedSkillKey,
   };
 }
 
@@ -1313,6 +1423,9 @@ function loadSkillTreeFromStorage() {
     state.skillLevels = new Map(Array.isArray(payload.levels) ? payload.levels : []);
     if (typeof payload.activeCategory === "string") {
       state.activeSkillCategory = payload.activeCategory;
+    }
+    if (typeof payload.selectedSkillKey === "string") {
+      state.selectedSkillKey = payload.selectedSkillKey;
     }
   } catch (error) {
     state.skillLevels = new Map();
@@ -1375,6 +1488,156 @@ function loadTimeCalculatorInputs() {
   } catch (error) {
     // Ignore corrupt storage and keep defaults.
   }
+}
+
+function syncTimeCalculatorSkillsFromTree() {
+  state.timeCalculatorInputs.flameMastery = getSkillLevel(normalizeSkillName(TIME_RELEVANT_SKILL_KEYS.flameMastery));
+}
+
+async function loadTimeGameIndex() {
+  const response = await fetch("./alcanthia_index.js", { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error("alcanthia_index.js를 불러오지 못했습니다.");
+  }
+  return response.text();
+}
+
+function findMatchingSymbol(source, startIndex, openChar, closeChar) {
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+
+  for (let index = startIndex; index < source.length; index += 1) {
+    const char = source[index];
+
+    if (inString) {
+      if (escaped) {
+        escaped = false;
+      } else if (char === "\\") {
+        escaped = true;
+      } else if (char === '"') {
+        inString = false;
+      }
+      continue;
+    }
+
+    if (char === '"') {
+      inString = true;
+      continue;
+    }
+
+    if (char === openChar) {
+      depth += 1;
+      continue;
+    }
+
+    if (char === closeChar) {
+      depth -= 1;
+      if (depth === 0) {
+        return index;
+      }
+    }
+  }
+
+  return -1;
+}
+
+function extractAssignedBracketExpression(source, name) {
+  const assignIndex = source.indexOf(`${name}=`);
+  if (assignIndex === -1) {
+    throw new Error(`${name} 레시피 정의를 찾지 못했습니다.`);
+  }
+
+  const openIndex = source.indexOf("[", assignIndex);
+  const closeIndex = findMatchingSymbol(source, openIndex, "[", "]");
+  if (openIndex === -1 || closeIndex === -1) {
+    throw new Error(`${name} 레시피 배열을 읽지 못했습니다.`);
+  }
+
+  return source.slice(openIndex, closeIndex + 1);
+}
+
+function extractTimedItemsFromSource(source) {
+  const items = [];
+  const seen = new Set();
+  const keyRegex = /([A-Za-z0-9_]+):\{/g;
+  let match;
+
+  while ((match = keyRegex.exec(source)) !== null) {
+    const code = match[1];
+    const bodyStart = match.index + match[0].length - 1;
+    const bodyEnd = findMatchingSymbol(source, bodyStart, "{", "}");
+
+    if (bodyEnd === -1) {
+      continue;
+    }
+
+    const body = source.slice(bodyStart + 1, bodyEnd);
+    if (!body.includes('brewDuration:') || !body.includes('name:"')) {
+      continue;
+    }
+
+    const nameMatch = body.match(/name:"([^"]+)"/);
+    const typeMatch = body.match(/type:"([^"]+)"/);
+    const durationMatch = body.match(/brewDuration:([^,}]+)/);
+
+    if (!nameMatch || !durationMatch || seen.has(code)) {
+      continue;
+    }
+
+    const baseDurationMs = Function("zn", `return (${durationMatch[1].trim()});`)(MINUTE_MILLIS);
+
+    items.push({
+      code,
+      name: nameMatch[1],
+      type: typeMatch ? typeMatch[1] : "unknown",
+      baseDurationMs,
+    });
+
+    seen.add(code);
+    keyRegex.lastIndex = bodyEnd;
+  }
+
+  return items;
+}
+
+function buildTimeRecipeKey(codeA, codeB) {
+  return [codeA, codeB].sort().join("::");
+}
+
+function extractTimeRecipesFromSource(source) {
+  const brewingExpression = extractAssignedBracketExpression(source, "Lo");
+  const engravingExpression = extractAssignedBracketExpression(source, "k1");
+  const allRecipeExpression = extractAssignedBracketExpression(source, "dh");
+  const evaluator = Function(`
+    const Lo = ${brewingExpression};
+    const k1 = ${engravingExpression};
+    const dh = ${allRecipeExpression};
+    return { Lo, dh };
+  `);
+  const { Lo, dh } = evaluator();
+
+  const brewRecipes = Lo.map(([inputs, output]) => ({
+    kind: "potion",
+    inputs: [...inputs],
+    requiredLevel: 0,
+    outputs: [output],
+  }));
+  const craftRecipes = dh.slice(Lo.length).map((recipe) => ({
+    kind: recipe.inputs.includes("engraving_stone") ? "engrave" : "craft",
+    inputs: [...recipe.inputs],
+    requiredLevel: recipe.requiredLevel ?? 0,
+    outputs: [...recipe.outputs],
+  }));
+  const recipeByKey = new Map(
+    [...brewRecipes, ...craftRecipes].map((recipe) => [buildTimeRecipeKey(recipe.inputs[0], recipe.inputs[1]), recipe]),
+  );
+
+  return { brewRecipes, craftRecipes, recipeByKey };
+}
+
+function findMatchingTimeRecipe(itemA, itemB) {
+  return state.timeRecipeByKey.get(buildTimeRecipeKey(itemA.code, itemB.code)) ?? null;
 }
 
 function getRecipeCollections() {
@@ -2085,25 +2348,50 @@ async function loadPotionRecipes() {
   }
 }
 
-function initializeTimeCalculatorData() {
-  state.timedItems = [...STATIC_TIMED_ITEMS].sort(
-    (left, right) => left.name.localeCompare(right.name, "ko") || left.code.localeCompare(right.code, "ko"),
-  );
-  state.timedItemByCode = new Map(state.timedItems.map((item) => [item.code, item]));
+async function initializeTimeCalculatorData() {
+  setTimeStatus("loading", "원본 앱 데이터에서 시간표와 레시피를 불러오는 중입니다.");
 
-  if (!state.timeCalculatorInputs.itemACode || !state.timedItemByCode.has(state.timeCalculatorInputs.itemACode)) {
-    state.timeCalculatorInputs.itemACode = state.timedItems.find((item) => item.name === "약초")?.code ?? state.timedItems[0]?.code ?? "";
-  }
-  if (!state.timeCalculatorInputs.itemBCode || !state.timedItemByCode.has(state.timeCalculatorInputs.itemBCode)) {
-    state.timeCalculatorInputs.itemBCode =
-      state.timedItems.find((item) => item.name === "푸른이끼")?.code ?? state.timedItems[1]?.code ?? state.timedItems[0]?.code ?? "";
-  }
+  try {
+    const source = await loadTimeGameIndex();
+    state.timedItems = extractTimedItemsFromSource(source).sort(
+      (left, right) => left.name.localeCompare(right.name, "ko") || left.code.localeCompare(right.code, "ko"),
+    );
+    state.timedItemByCode = new Map(state.timedItems.map((item) => [item.code, item]));
 
-  populateTimeItemSelectors();
-  syncTimeCalculatorInputs();
-  renderTimeDurationTable();
-  updateTimeCalculator();
-  setTimeStatus("ready", `기본시간 표 ${formatNumber(state.timedItems.length, 0)}개 항목을 불러왔습니다.`);
+    const recipes = extractTimeRecipesFromSource(source);
+    state.timeBrewingRecipes = recipes.brewRecipes;
+    state.timeCraftRecipes = recipes.craftRecipes;
+    state.timeRecipeByKey = recipes.recipeByKey;
+
+    if (!state.timeCalculatorInputs.itemACode || !state.timedItemByCode.has(state.timeCalculatorInputs.itemACode)) {
+      state.timeCalculatorInputs.itemACode = state.timedItems.find((item) => item.name === "약초")?.code ?? state.timedItems[0]?.code ?? "";
+    }
+    if (!state.timeCalculatorInputs.itemBCode || !state.timedItemByCode.has(state.timeCalculatorInputs.itemBCode)) {
+      state.timeCalculatorInputs.itemBCode =
+        state.timedItems.find((item) => item.name === "푸른이끼")?.code ?? state.timedItems[1]?.code ?? state.timedItems[0]?.code ?? "";
+    }
+
+    populateTimeItemSelectors();
+    syncTimeCalculatorInputs();
+    renderTimeDurationTable();
+    updateTimeCalculator();
+    setTimeStatus(
+      "ready",
+      `원본 앱 기준 기본시간 ${formatNumber(state.timedItems.length, 0)}개, 양조 ${formatNumber(state.timeBrewingRecipes.length, 0)}개, 제작 ${formatNumber(state.timeCraftRecipes.length, 0)}개를 불러왔습니다.`,
+    );
+  } catch (error) {
+    state.timedItems = [...STATIC_TIMED_ITEMS].sort(
+      (left, right) => left.name.localeCompare(right.name, "ko") || left.code.localeCompare(right.code, "ko"),
+    );
+    state.timedItemByCode = new Map(state.timedItems.map((item) => [item.code, item]));
+    state.timeBrewingRecipes = [];
+    state.timeCraftRecipes = [];
+    state.timeRecipeByKey = new Map();
+    populateTimeItemSelectors();
+    syncTimeCalculatorInputs();
+    renderTimeDurationTable();
+    setTimeStatus("error", `원본 앱 레시피를 불러오지 못했습니다: ${error.message}`);
+  }
 }
 
 function setTimeStatus(type, message) {
@@ -2111,6 +2399,14 @@ function setTimeStatus(type, message) {
     return;
   }
 
+  if (type === "ready") {
+    timeStatusBanner.hidden = true;
+    timeStatusBanner.textContent = "";
+    timeStatusBanner.className = "status-banner";
+    return;
+  }
+
+  timeStatusBanner.hidden = false;
   timeStatusBanner.className = `status-banner ${type}`;
   timeStatusBanner.textContent = message;
 }
@@ -2136,6 +2432,7 @@ function syncTimeCalculatorInputs() {
     return;
   }
 
+  syncTimeCalculatorSkillsFromTree();
   timeOperationModeSelect.value = state.timeCalculatorInputs.operationMode;
   timeCauldronEnhancementInput.value = String(state.timeCalculatorInputs.cauldronEnhancement);
   timeFlameMasteryInput.value = String(state.timeCalculatorInputs.flameMastery);
@@ -2186,20 +2483,49 @@ function timeItemTypeLabel(type) {
   }[type] ?? type;
 }
 
-function resolveTimeOperationMode(selectedMode, itemA, itemB) {
-  if (selectedMode !== "auto") {
-    return selectedMode;
+function resolveTimeOperationMode(selectedMode, itemA, itemB, enhancementA, enhancementB) {
+  const matchedRecipe = findMatchingTimeRecipe(itemA, itemB);
+  const validEnhancement =
+    itemA.code === itemB.code && enhancementA === enhancementB && itemA.type !== "produce";
+
+  if (selectedMode === "auto") {
+    if (validEnhancement) {
+      return { valid: true, mode: "enhancement", recipe: null };
+    }
+    if (matchedRecipe) {
+      return { valid: true, mode: matchedRecipe.kind, recipe: matchedRecipe };
+    }
+    return {
+      valid: false,
+      reason: "원본 앱에 없는 조합입니다. 양조 43개, 제작 37개 레시피 중 하나이거나 같은 강화의 동일 아이템 2개 강화여야 합니다.",
+    };
   }
 
-  if (itemA.code === itemB.code && itemA.type !== "produce") {
-    return "enhancement";
+  if (selectedMode === "enhancement") {
+    return validEnhancement
+      ? { valid: true, mode: "enhancement", recipe: null }
+      : { valid: false, reason: "강화는 같은 강화 수치의 동일한 아이템 2개를 넣어야만 가능합니다." };
   }
 
-  if (itemA.type === "produce" && itemB.type === "produce") {
-    return "potion";
+  if (selectedMode === "potion") {
+    return matchedRecipe?.kind === "potion"
+      ? { valid: true, mode: "potion", recipe: matchedRecipe }
+      : { valid: false, reason: "양조는 원본 앱의 43개 레시피 조합에서만 가능합니다." };
   }
 
-  return "craft";
+  if (selectedMode === "craft") {
+    return matchedRecipe?.kind === "craft"
+      ? { valid: true, mode: "craft", recipe: matchedRecipe }
+      : { valid: false, reason: "제작은 원본 앱의 제작 레시피에서만 가능합니다." };
+  }
+
+  if (selectedMode === "engrave") {
+    return matchedRecipe?.kind === "engrave"
+      ? { valid: true, mode: "engrave", recipe: matchedRecipe }
+      : { valid: false, reason: "각인은 각인석이 포함된 원본 앱 레시피에서만 가능합니다." };
+  }
+
+  return { valid: false, reason: "이 작업 종류는 현재 지원하지 않습니다." };
 }
 
 function timeOperationLabel(mode) {
@@ -2283,6 +2609,11 @@ function buildTimeNotes(mode, itemA, itemB, flameReduction, fireReduction) {
     },
   ];
 
+  notes.push({
+    title: "확인된 시간 영향 스킬",
+    body: "원본 게임 번들 기준으로 작업 시간에는 불꽃 숙련만 직접 반영됩니다. 행운 숙련은 결과물 2배, 심지 숙련은 강화 성공률, 금속 단련·생명의 씨앗은 재료 허용, 불꽃의 정령·피어나는 손·화염 고삐·연성의 맥은 자동화에만 관여합니다.",
+  });
+
   if (flameReduction > 0) {
     notes.push({
       title: "불꽃 숙련 적용",
@@ -2319,6 +2650,10 @@ function updateTimeCalculator() {
     return;
   }
 
+  syncTimeCalculatorSkillsFromTree();
+  if (timeFlameMasteryInput) {
+    timeFlameMasteryInput.value = String(state.timeCalculatorInputs.flameMastery);
+  }
   const itemA = state.timedItemByCode.get(state.timeCalculatorInputs.itemACode);
   const itemB = state.timedItemByCode.get(state.timeCalculatorInputs.itemBCode);
   if (!itemA || !itemB) {
@@ -2328,7 +2663,35 @@ function updateTimeCalculator() {
   const effectiveA = enhancedWorkDuration(itemA.baseDurationMs, state.timeCalculatorInputs.itemAEnhancement);
   const effectiveB = enhancedWorkDuration(itemB.baseDurationMs, state.timeCalculatorInputs.itemBEnhancement);
   const baseWorkMs = Math.max(effectiveA, effectiveB);
-  const mode = resolveTimeOperationMode(state.timeCalculatorInputs.operationMode, itemA, itemB);
+  const modeResult = resolveTimeOperationMode(
+    state.timeCalculatorInputs.operationMode,
+    itemA,
+    itemB,
+    state.timeCalculatorInputs.itemAEnhancement,
+    state.timeCalculatorInputs.itemBEnhancement,
+  );
+
+  timeItemASummary.innerHTML = renderTimeItemSummary(itemA, state.timeCalculatorInputs.itemAEnhancement, effectiveA);
+  timeItemBSummary.innerHTML = renderTimeItemSummary(itemB, state.timeCalculatorInputs.itemBEnhancement, effectiveB);
+
+  if (!modeResult.valid) {
+    timeResultPrimary.innerHTML = `
+      <div class="time-result-kicker">계산 불가</div>
+      <div class="time-result-time">-</div>
+      <p class="time-result-detail">${modeResult.reason}</p>
+    `;
+    timeFormulaBreakdown.innerHTML = "";
+    timeResultNotes.innerHTML = `
+      <div class="time-note-row">
+        <strong>원본 앱 규칙</strong>
+        <div>양조는 43개, 제작은 37개 원본 레시피 조합만 허용되고 강화는 같은 강화 수치의 동일 아이템 2개로만 가능합니다.</div>
+      </div>
+    `;
+    saveTimeCalculatorInputs();
+    return;
+  }
+
+  const { mode, recipe } = modeResult;
   const flameReduction = flameMasteryReduction(
     state.timeCalculatorInputs.flameMastery,
     state.timeCalculatorInputs.cauldronEnhancement,
@@ -2340,9 +2703,6 @@ function updateTimeCalculator() {
       : 0;
   const finalMs = Math.round(afterFlameMs * (1 - fireReduction));
 
-  timeItemASummary.innerHTML = renderTimeItemSummary(itemA, state.timeCalculatorInputs.itemAEnhancement, effectiveA);
-  timeItemBSummary.innerHTML = renderTimeItemSummary(itemB, state.timeCalculatorInputs.itemBEnhancement, effectiveB);
-
   timeResultPrimary.innerHTML = `
     <div class="time-result-kicker">${timeOperationLabel(mode)} 예상 시간</div>
     <div class="time-result-time">${formatWorkDuration(finalMs)}</div>
@@ -2350,6 +2710,11 @@ function updateTimeCalculator() {
       기준시간은 두 재료 중 더 긴 시간인 <strong>${formatWorkDuration(baseWorkMs)}</strong>입니다.
       이후 불꽃 숙련과 불꽃 포션 보정을 순서대로 적용했습니다.
     </p>
+    ${
+      recipe
+        ? `<p class="time-result-detail">레시피: <strong>${itemA.name}</strong> + <strong>${itemB.name}</strong> → <strong>${recipe.outputs.map((output) => state.timedItemByCode.get(output)?.name ?? output).join(", ")}</strong> / 필요 강화 합 ${recipe.requiredLevel}</p>`
+        : `<p class="time-result-detail">강화 규칙: 동일 아이템 + 같은 강화 수치</p>`
+    }
   `;
 
   timeFormulaBreakdown.innerHTML = [
@@ -2447,6 +2812,10 @@ function skillPointTotals() {
   return spent;
 }
 
+function requiredSkillLevel() {
+  return Math.max(1, skillPointTotals());
+}
+
 function skillCategoryMeta(category) {
   return SKILL_CATEGORY_THEMES[category] ?? {
     treeId: normalizeSkillName(category),
@@ -2512,6 +2881,194 @@ function skillLaneLabel(index) {
   return SKILL_LANE_LABELS[index] ?? `Tier ${index + 1}`;
 }
 
+function skillIconLabel(skillName) {
+  const tokens = Array.from(String(skillName || "").replace(/\s+/g, "").trim());
+  return tokens.slice(0, 2).join("") || "?";
+}
+
+function formatSkillDescriptionValue(value) {
+  if (!Number.isFinite(value)) {
+    return "0";
+  }
+
+  const rounded = Math.round(value * 100) / 100;
+  if (Number.isInteger(rounded)) {
+    return String(rounded);
+  }
+
+  return rounded.toFixed(2).replace(/\.?0+$/, "");
+}
+
+function resolveSkillDescription(description, level) {
+  const actualLevel = Math.max(0, Number(level) || 0);
+  return String(description || "")
+    .replace(/(\d+(?:\.\d+)?)\s*\*\s*lv(\s*(?:%|개|칸|명))?/gi, (_, factor, unit = "") => {
+      return `${formatSkillDescriptionValue(Number(factor) * actualLevel)}${unit}`;
+    })
+    .replace(/lv\s*\*\s*(\d+(?:\.\d+)?)(\s*(?:%|개|칸|명))?/gi, (_, factor, unit = "") => {
+      return `${formatSkillDescriptionValue(actualLevel * Number(factor))}${unit}`;
+    })
+    .replace(/lv(\s*(?:%|개|칸|명))/gi, (_, unit = "") => {
+      return `${formatSkillDescriptionValue(actualLevel)}${unit}`;
+    });
+}
+
+function ensureSelectedSkill(categorySkills) {
+  if (!categorySkills.length) {
+    state.selectedSkillKey = "";
+    return null;
+  }
+
+  const selected = categorySkills.find((skill) => skill.key === state.selectedSkillKey);
+  if (selected) {
+    return selected;
+  }
+
+  const learned = categorySkills.find((skill) => getSkillLevel(skill.key) > 0);
+  state.selectedSkillKey = (learned ?? categorySkills[0]).key;
+  return state.skillLookup.get(state.selectedSkillKey) ?? categorySkills[0];
+}
+
+function buildSkillNodeLayout(categorySkills) {
+  const columns = buildSkillColumns(categorySkills);
+  const positions = new Map();
+  let maxColumn = 0;
+
+  columns.forEach((column, depth) => {
+    const occupiedColumns = new Set();
+    const arranged = [...column].sort((left, right) => {
+      const leftParents = left.prerequisites
+        .map((requirement) => positions.get(requirement.skillKey)?.column)
+        .filter(Number.isFinite);
+      const rightParents = right.prerequisites
+        .map((requirement) => positions.get(requirement.skillKey)?.column)
+        .filter(Number.isFinite);
+      const leftAnchor = leftParents.length ? leftParents.reduce((sum, value) => sum + value, 0) / leftParents.length : left.order;
+      const rightAnchor = rightParents.length ? rightParents.reduce((sum, value) => sum + value, 0) / rightParents.length : right.order;
+      return leftAnchor - rightAnchor || left.order - right.order;
+    });
+
+    arranged.forEach((skill, fallbackIndex) => {
+      const parentColumns = skill.prerequisites
+        .map((requirement) => positions.get(requirement.skillKey)?.column)
+        .filter(Number.isFinite);
+      let targetColumn = parentColumns.length
+        ? Math.round(parentColumns.reduce((sum, value) => sum + value, 0) / parentColumns.length)
+        : fallbackIndex;
+      targetColumn = Math.max(0, targetColumn + (SKILL_COLUMN_OFFSETS[skill.name] ?? 0));
+      if (Number.isFinite(SKILL_FIXED_COLUMNS[skill.name])) {
+        targetColumn = SKILL_FIXED_COLUMNS[skill.name];
+      }
+
+      while (occupiedColumns.has(targetColumn)) {
+        targetColumn += 1;
+      }
+
+      occupiedColumns.add(targetColumn);
+      maxColumn = Math.max(maxColumn, targetColumn);
+      positions.set(skill.key, { row: depth, column: targetColumn, skill });
+    });
+  });
+
+  const usedColumns = [...new Set([...positions.values()].map((position) => position.column))].sort((left, right) => left - right);
+  const columnMap = new Map(usedColumns.map((column, index) => [column, index]));
+  positions.forEach((position, key) => {
+    positions.set(key, { ...position, column: columnMap.get(position.column) ?? position.column });
+  });
+  positions.forEach((position, key) => {
+    if (Number.isFinite(SKILL_FIXED_COLUMNS[position.skill.name])) {
+      positions.set(key, { ...position, column: SKILL_FIXED_COLUMNS[position.skill.name] });
+    }
+  });
+
+  const rows = Math.max(columns.length, 1);
+  const cols = Math.max(
+    [...positions.values()].reduce((max, position) => Math.max(max, position.column + 1), 1),
+    1,
+  );
+  const connections = categorySkills.flatMap((skill) => {
+    const child = positions.get(skill.key);
+    if (!child) {
+      return [];
+    }
+
+    return skill.prerequisites
+      .map((requirement) => {
+        const parent = positions.get(requirement.skillKey);
+        if (!parent) {
+          return null;
+        }
+
+        const x1 = ((parent.column + 0.5) / cols) * 100;
+        const y1 = ((parent.row + 0.5) / rows) * 100;
+        const x2 = ((child.column + 0.5) / cols) * 100;
+        const y2 = ((child.row + 0.5) / rows) * 100;
+        const midY = (y1 + y2) / 2;
+        return {
+          key: `${requirement.skillKey}-${skill.key}-${requirement.minLevel}`,
+          active: getSkillLevel(requirement.skillKey) >= requirement.minLevel,
+          path: `M ${x1} ${y1} C ${x1} ${midY}, ${x2} ${midY}, ${x2} ${y2}`,
+        };
+      })
+      .filter(Boolean);
+  });
+
+  return { positions, connections, rows, cols };
+}
+
+function renderSkillDetailDock(skill, theme) {
+  if (!skillDetailDock) {
+    return;
+  }
+
+  if (!skill) {
+    skillDetailDock.innerHTML = "";
+    return;
+  }
+
+  const currentLevel = getSkillLevel(skill.key);
+  const missing = skillMissingRequirements(skill);
+
+  skillDetailDock.innerHTML = `
+    <section class="skill-detail-card" style="--detail-tint:${theme.tint}; --detail-glow:${theme.glow}; --detail-accent:${theme.accent};">
+      <div class="skill-detail-icon-wrap">
+        <button class="skill-detail-icon" type="button" data-select-skill="${skill.key}" aria-label="${skill.name} 선택">
+          ${
+            skill.iconPath
+              ? `<img class="skill-detail-icon-image" src="${skill.iconPath}" alt="${skill.name}" loading="eager" decoding="async" />`
+              : `<span>${skillIconLabel(skill.name)}</span>`
+          }
+        </button>
+      </div>
+      <div class="skill-detail-copy">
+        <p class="skill-detail-kicker">${skill.category} · ${skillLaneLabel(Number.isFinite(skill.depth) ? skill.depth : 0)}</p>
+        <h3>${skill.name}</h3>
+        <p class="skill-detail-description">${resolveSkillDescription(skill.description, currentLevel)}</p>
+        <p class="skill-detail-meta">현재 Lv ${currentLevel} / ${skill.maxLevel}</p>
+        <p class="skill-detail-requirements ${missing.length ? "missing" : "met"}">
+          ${missing.length
+            ? `필요 조건: ${missing
+                .map(
+                  (requirement) =>
+                    `${state.skillLookup.get(requirement.skillKey)?.name ?? requirement.rawName} ${requirement.minLevel}`,
+                )
+                .join(", ")}`
+            : skill.prerequisites.length
+              ? "선행 조건 충족"
+              : "시작 스킬"}
+        </p>
+      </div>
+      <div class="skill-detail-actions">
+        <div class="skill-detail-level">SP ${currentLevel}</div>
+        <div class="skill-detail-stepper">
+          <button type="button" data-action="decrease-skill" data-skill-key="${skill.key}" ${canDecreaseSkill(skill) ? "" : "disabled"}>회수</button>
+          <button type="button" data-action="increase-skill" data-skill-key="${skill.key}" ${canIncreaseSkill(skill) ? "" : "disabled"}>투자</button>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 function renderSkillCategoryTabs() {
   if (!skillCategoryTabs) {
     return;
@@ -2561,17 +3118,20 @@ function renderSkillTree() {
     skillTreeSummary.innerHTML = `<p>skills.csv를 불러오는 중입니다.</p>`;
     skillTreeGrid.innerHTML = "";
     skillCategoryTabs.innerHTML = "";
+    renderSkillDetailDock(null, skillCategoryMeta(""));
     return;
   }
 
   renderSkillCategoryTabs();
   const currentCategory = state.activeSkillCategory || skillCategories()[0];
   const categorySkills = state.skills.filter((skill) => skill.category === currentCategory);
-  const categoryColumns = buildSkillColumns(categorySkills);
   const totalSpent = skillPointTotals();
+  const neededLevel = requiredSkillLevel();
   const unlockedCount = state.skills.filter(skillPrerequisitesMet).length;
   const categoryLearned = learnedSkillCount(currentCategory);
   const theme = skillCategoryMeta(currentCategory);
+  const selectedSkill = ensureSelectedSkill(categorySkills);
+  const { positions, connections, rows, cols } = buildSkillNodeLayout(categorySkills);
 
   skillTreeSummary.innerHTML = `
     <div class="skill-summary-shell">
@@ -2583,90 +3143,68 @@ function renderSkillTree() {
         </div>
       </div>
       <div class="skill-summary-stats">
-        <p>사용 SP: <strong>${formatNumber(totalSpent, 0)}</strong></p>
-        <p>해금 스킬: <strong>${formatNumber(unlockedCount, 0)}</strong> / ${formatNumber(state.skills.length, 0)}</p>
+        <div class="skill-summary-level-card">
+          <span class="skill-summary-level-label">필요 레벨</span>
+          <strong class="skill-summary-level-value">Lv ${formatNumber(neededLevel, 0)}</strong>
+          <small>총 투자 SP ${formatNumber(totalSpent, 0)}</small>
+        </div>
+        <div class="skill-summary-meta">
+          <p>해금 스킬: <strong>${formatNumber(unlockedCount, 0)}</strong> / ${formatNumber(state.skills.length, 0)}</p>
+          <button type="button" class="skill-reset-button" data-action="reset-skills">스킬 리셋</button>
+        </div>
       </div>
     </div>
   `;
 
   skillTreeGrid.innerHTML = `
-    <div class="skill-tree-shell">
-      ${categoryColumns
-        .map(
-          (column, laneIndex) => `
-            <section class="skill-lane">
-              <header class="skill-lane-header">
-                <p class="skill-lane-kicker">Tier ${laneIndex + 1}</p>
-                <strong>${skillLaneLabel(laneIndex)}</strong>
-              </header>
-              <div class="skill-lane-stack">
-                ${column
-                  .map((skill) => {
-                    const currentLevel = getSkillLevel(skill.key);
-                    const met = skillPrerequisitesMet(skill);
-                    const missing = skillMissingRequirements(skill);
-                    const prerequisiteChips = skill.prerequisites.length
-                      ? skill.prerequisites
-                          .map((requirement) => {
-                            const metRequirement = getSkillLevel(requirement.skillKey) >= requirement.minLevel;
-                            return `
-                              <span class="skill-prereq-chip ${metRequirement ? "met" : "missing"}">
-                                ${state.skillLookup.get(requirement.skillKey)?.name ?? requirement.rawName} ${requirement.minLevel}
-                              </span>
-                            `;
-                          })
-                          .join("")
-                      : `<span class="skill-prereq-chip root">시작 노드</span>`;
-                    const statusText = currentLevel > 0 ? "활성" : met ? "해금 가능" : "잠김";
-                    const statusClass = currentLevel > 0 ? "learned" : met ? "ready" : "locked";
+    <div class="skill-tree-shell icon-only" style="--tree-tint:${theme.tint}; --tree-glow:${theme.glow}; --tree-accent:${theme.accent};">
+      <div class="skill-tier-legend">
+        ${Array.from({ length: rows }, (_, index) => `<span class="skill-tier-pill">Tier ${index + 1} · ${skillLaneLabel(index)}</span>`).join("")}
+      </div>
+      <div class="skill-map-shell" style="--skill-cols:${cols}; --skill-rows:${rows};">
+        <svg class="skill-connector-map" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+          ${connections
+            .map(
+              (connection) => `
+                <path class="skill-connector ${connection.active ? "active" : ""}" d="${connection.path}" pathLength="100"></path>
+              `,
+            )
+            .join("")}
+        </svg>
+        <div class="skill-node-layer">
+          ${categorySkills
+            .map((skill) => {
+              const position = positions.get(skill.key);
+              const currentLevel = getSkillLevel(skill.key);
+              const met = skillPrerequisitesMet(skill);
+              const selected = selectedSkill?.key === skill.key;
+              const statusClass = currentLevel > 0 ? "learned" : met ? "ready" : "locked";
 
-                    return `
-                      <article class="skill-card ${met ? "" : "locked"} ${currentLevel > 0 ? "learned" : ""}" data-skill-key="${skill.key}" style="--skill-accent:${theme.tint}; --skill-glow:${theme.glow};">
-                        <div class="skill-card-rail"></div>
-                        <div class="skill-card-header">
-                          <div>
-                            <strong>${skill.name}</strong>
-                            <p>Lv ${currentLevel} / ${skill.maxLevel}</p>
-                          </div>
-                          <span class="skill-state-badge ${statusClass}">${statusText}</span>
-                        </div>
-                        <div class="skill-card-meta">
-                          <span class="skill-chip">Tier ${skill.depth + 1}</span>
-                          <span class="skill-chip">최대 ${skill.maxLevel}</span>
-                          <span class="skill-chip">${skill.prerequisites.length ? `선행 ${skill.prerequisites.length}` : "시작"}</span>
-                        </div>
-                        <p class="skill-description">${skill.description}</p>
-                        <div class="skill-prereq-group">
-                          <p class="skill-prereq-label">선행</p>
-                          <div class="skill-prereq-list">${prerequisiteChips}</div>
-                        </div>
-                        <p class="skill-prereq ${missing.length ? "missing" : "met"}">
-                          ${missing.length
-                            ? `필요: ${missing
-                                .map(
-                                  (requirement) =>
-                                    `${state.skillLookup.get(requirement.skillKey)?.name ?? requirement.rawName} ${requirement.minLevel}`,
-                                )
-                                .join(" / ")}`
-                            : "선행 조건 충족"}
-                        </p>
-                        <div class="skill-card-footer">
-                          <div class="skill-stepper">
-                            <button type="button" data-action="decrease-skill" data-skill-key="${skill.key}" ${canDecreaseSkill(skill) ? "" : "disabled"}>-</button>
-                            <button type="button" data-action="increase-skill" data-skill-key="${skill.key}" ${canIncreaseSkill(skill) ? "" : "disabled"}>+</button>
-                          </div>
-                        </div>
-                      </article>
-                    `;
-                  })
-                  .join("")}
-              </div>
-            </section>
-          `,
-        )
-        .join("")}
+              return `
+                <button
+                  class="skill-node ${statusClass} ${selected ? "selected" : ""}"
+                  type="button"
+                  data-select-skill="${skill.key}"
+                  style="grid-column:${(position?.column ?? 0) + 1}; grid-row:${(position?.row ?? 0) + 1};"
+                  aria-label="${skill.name}"
+                  title="${skill.name}"
+                >
+                  ${
+                    skill.iconPath
+                      ? `<img class="skill-node-image" src="${skill.iconPath}" alt="${skill.name}" loading="eager" decoding="async" />`
+                      : `<span class="skill-node-icon">${skillIconLabel(skill.name)}</span>`
+                  }
+                  <span class="skill-node-level">Lv ${currentLevel}/${skill.maxLevel}</span>
+                </button>
+              `;
+            })
+            .join("")}
+        </div>
+      </div>
     </div>
   `;
+
+  renderSkillDetailDock(positions.get(selectedSkill?.key)?.skill ?? selectedSkill, theme);
 }
 
 function updateSkillLevel(skillKey, delta) {
@@ -2689,6 +3227,14 @@ function updateSkillLevel(skillKey, delta) {
   }
   saveSkillTreeToStorage();
   renderSkillTree();
+  updateTimeCalculator();
+}
+
+function resetSkillLevels() {
+  state.skillLevels = new Map();
+  saveSkillTreeToStorage();
+  renderSkillTree();
+  updateTimeCalculator();
 }
 
 function syncSkillPointInputsFromState() {
@@ -3118,6 +3664,8 @@ function drawStripedDiamond(points, options) {
 function drawPlant(col, row, crop, effect, isHovered) {
   const center = gridToPixel(col, row);
   const radius = CELL_SIZE * 0.4;
+  const cropImage = cropImageCache.get(crop.id);
+  const hasCropImage = cropImage?.complete && cropImage.naturalWidth > 0;
   const gradient = ctx.createLinearGradient(
     center.x - radius,
     center.y - radius,
@@ -3128,23 +3676,45 @@ function drawPlant(col, row, crop, effect, isHovered) {
   gradient.addColorStop(1, crop.color);
 
   ctx.save();
-  ctx.beginPath();
-  ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
-  ctx.fillStyle = gradient;
   ctx.globalAlpha = effect.dead ? 0.42 : 0.96;
-  ctx.fill();
-  ctx.lineWidth = isHovered ? 3 : 2;
-  ctx.strokeStyle = effect.dead ? "rgba(90, 57, 33, 0.85)" : "rgba(255,255,255,0.85)";
-  ctx.stroke();
+  if (!hasCropImage) {
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+    ctx.fillStyle = gradient;
+    ctx.fill();
+    ctx.lineWidth = isHovered ? 3 : 2;
+    ctx.strokeStyle = effect.dead ? "rgba(90, 57, 33, 0.85)" : "rgba(255,255,255,0.85)";
+    ctx.stroke();
+  } else if (isHovered) {
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius + 3, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(255,255,255,0.9)";
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+  }
   ctx.restore();
 
-  ctx.save();
-  ctx.fillStyle = effect.dead ? "rgba(59,40,22,0.92)" : "rgba(44, 30, 16, 0.92)";
-  ctx.font = `700 ${Math.round(CELL_SIZE * 0.44)}px "Malgun Gothic", sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(crop.short, center.x, center.y + 1);
-  ctx.restore();
+  if (hasCropImage) {
+    const imageSize = radius * 2.15;
+    ctx.save();
+    ctx.globalAlpha = effect.dead ? 0.58 : 1;
+    ctx.drawImage(
+      cropImage,
+      center.x - imageSize / 2,
+      center.y - imageSize / 2,
+      imageSize,
+      imageSize,
+    );
+    ctx.restore();
+  } else {
+    ctx.save();
+    ctx.fillStyle = effect.dead ? "rgba(59,40,22,0.92)" : "rgba(44, 30, 16, 0.92)";
+    ctx.font = `700 ${Math.round(CELL_SIZE * 0.44)}px "Malgun Gothic", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(crop.short, center.x, center.y + 1);
+    ctx.restore();
+  }
 
   if (effect.dead) {
     ctx.save();
@@ -3440,10 +4010,15 @@ function renderPaletteGroup(target, items) {
     button.type = "button";
     button.className = `crop-button${crop.id === state.selectedCropId ? " active" : ""}`;
     button.dataset.cropId = crop.id;
+    const hasIconImage = Boolean(crop.iconPath);
     button.innerHTML = `
       <span class="crop-button-top">
-        <span class="crop-swatch" style="background:linear-gradient(135deg, ${crop.accentColor ?? crop.color}, ${crop.color})">
-          <span class="crop-swatch-text">${crop.short}</span>
+        <span class="crop-swatch${hasIconImage ? " has-image" : ""}"${hasIconImage ? "" : ` style="background:linear-gradient(135deg, ${crop.accentColor ?? crop.color}, ${crop.color})"`}>
+          ${
+            hasIconImage
+              ? `<img class="crop-swatch-image" src="${crop.iconPath}" alt="${crop.name}" loading="eager" decoding="async" />`
+              : `<span class="crop-swatch-text">${crop.short}</span>`
+          }
         </span>
         <span class="crop-button-label">
           <strong>${crop.name}</strong>
@@ -4045,11 +4620,47 @@ skillCategoryTabs?.addEventListener("click", (event) => {
   }
 
   state.activeSkillCategory = button.dataset.category;
+  state.selectedSkillKey = "";
   saveSkillTreeToStorage();
   renderSkillTree();
 });
 
+skillTreeSummary?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action='reset-skills']");
+  if (!button) {
+    return;
+  }
+
+  resetSkillLevels();
+});
+
 skillTreeGrid?.addEventListener("click", (event) => {
+  const selectButton = event.target.closest("[data-select-skill]");
+  if (selectButton) {
+    state.selectedSkillKey = selectButton.dataset.selectSkill;
+    saveSkillTreeToStorage();
+    renderSkillTree();
+    return;
+  }
+
+  const button = event.target.closest("[data-action][data-skill-key]");
+  if (!button) {
+    return;
+  }
+
+  const delta = button.dataset.action === "increase-skill" ? 1 : -1;
+  updateSkillLevel(button.dataset.skillKey, delta);
+});
+
+skillDetailDock?.addEventListener("click", (event) => {
+  const selectButton = event.target.closest("[data-select-skill]");
+  if (selectButton) {
+    state.selectedSkillKey = selectButton.dataset.selectSkill;
+    saveSkillTreeToStorage();
+    renderSkillTree();
+    return;
+  }
+
   const button = event.target.closest("[data-action][data-skill-key]");
   if (!button) {
     return;
@@ -4194,6 +4805,7 @@ loadCauldronStateFromStorage();
 loadTimeCalculatorInputs();
 loadSkillTreeFromStorage();
 loadSkillPointInputs();
+preloadCropImages();
 const loadedSharedLayout = loadLayoutFromUrl();
 if (!loadedSharedLayout) {
   loadLayoutFromStorage();

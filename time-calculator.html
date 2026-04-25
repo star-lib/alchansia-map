@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Alcanthia Time Calculator</title>
+    <link rel="stylesheet" href="./time-calculator.css" />
+  </head>
+  <body>
+    <main class="page-shell">
+      <section class="hero-card">
+        <p class="eyebrow">Alcanthia Tool</p>
+        <h1>아이템 2개 작업 시간 계산기</h1>
+        <p class="hero-copy">
+          로컬의 <code>alcanthia_index.js</code>를 직접 읽어서 아이템 기본시간을 구성하고,
+          양조, 강화, 제작의 예상 시간을 계산합니다.
+        </p>
+      </section>
+
+      <section class="app-card">
+        <div id="status-banner" class="status-banner loading">
+          게임 데이터를 불러오는 중입니다.
+        </div>
+
+        <section class="controls-grid">
+          <label class="field">
+            <span>작업 종류</span>
+            <select id="operation-mode">
+              <option value="auto">자동 판별</option>
+              <option value="potion">양조</option>
+              <option value="craft">제작</option>
+              <option value="enhancement">강화</option>
+              <option value="engrave">각인</option>
+              <option value="utility">유틸</option>
+            </select>
+          </label>
+
+          <label class="field">
+            <span>가마솥 강화</span>
+            <input id="cauldron-enhancement" type="number" min="0" max="20" value="0" />
+          </label>
+
+          <label class="field">
+            <span>Flame Mastery</span>
+            <input id="flame-mastery" type="number" min="0" max="20" value="0" readonly />
+            <small>스킬 트리의 불꽃 숙련 레벨을 자동으로 불러옵니다.</small>
+          </label>
+
+          <label class="field">
+            <span>Fire Potion 강화</span>
+            <input id="fire-potion-level" type="number" min="-1" max="20" value="-1" />
+            <small><code>-1</code>이면 미사용</small>
+          </label>
+        </section>
+
+        <section class="item-grid">
+          <article class="item-card">
+            <header class="item-header">
+              <h2>재료 1</h2>
+            </header>
+            <label class="field">
+              <span>아이템</span>
+              <select id="item-a-select"></select>
+            </label>
+            <label class="field">
+              <span>강화 수치</span>
+              <input id="item-a-enhancement" type="number" min="0" max="20" value="0" />
+            </label>
+            <div id="item-a-summary" class="item-summary"></div>
+          </article>
+
+          <article class="item-card">
+            <header class="item-header">
+              <h2>재료 2</h2>
+            </header>
+            <label class="field">
+              <span>아이템</span>
+              <select id="item-b-select"></select>
+            </label>
+            <label class="field">
+              <span>강화 수치</span>
+              <input id="item-b-enhancement" type="number" min="0" max="20" value="0" />
+            </label>
+            <div id="item-b-summary" class="item-summary"></div>
+          </article>
+        </section>
+
+        <section class="result-layout">
+          <article class="result-card primary">
+            <h2>예상 시간</h2>
+            <div id="result-primary" class="result-primary"></div>
+            <div id="formula-breakdown" class="formula-breakdown"></div>
+          </article>
+
+          <article class="result-card">
+            <h2>해석</h2>
+            <div id="result-notes" class="notes-list"></div>
+          </article>
+        </section>
+
+        <section class="table-card">
+          <div class="table-header">
+            <h2>기본시간 빠른 참조</h2>
+            <label class="field inline-field">
+              <span>검색</span>
+              <input id="table-filter" type="search" placeholder="아이템 이름 또는 코드" />
+            </label>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>아이템</th>
+                  <th>코드</th>
+                  <th>종류</th>
+                  <th>기본시간</th>
+                </tr>
+              </thead>
+              <tbody id="duration-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script type="module" src="./time-calculator.js"></script>
+  </body>
+</html>
