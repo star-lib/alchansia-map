@@ -230,6 +230,128 @@ const CROP_PRODUCTION_MATERIALS = {
   "phantom-fern": "환영잎",
   "sunset-tree": "노을잎",
 };
+const STATIC_TIMED_ITEMS = [
+  { code: "herb_seed", name: "약초 씨앗", type: "seed", baseDurationMs: 15000 },
+  { code: "dewroot_bulb", name: "이슬뿌리 구근", type: "seed", baseDurationMs: 15000 },
+  { code: "red_flower_seed", name: "붉은꽃 씨앗", type: "seed", baseDurationMs: 15000 },
+  { code: "blue_moss_spore", name: "푸른이끼 포자", type: "seed", baseDurationMs: 15000 },
+  { code: "poison_flower_seed", name: "독꽃 씨앗", type: "seed", baseDurationMs: 15000 },
+  { code: "moonlight_mushroom_seed", name: "달빛버섯 씨앗", type: "seed", baseDurationMs: 15000 },
+  { code: "embervine_seed", name: "불씨덩굴 씨앗", type: "seed", baseDurationMs: 15000 },
+  { code: "wind_flower_seed", name: "바람꽃 씨앗", type: "seed", baseDurationMs: 15000 },
+  { code: "star_flower_seed", name: "별꽃 씨앗", type: "seed", baseDurationMs: 60000 },
+  { code: "sunlight_flower_seed", name: "햇살꽃 씨앗", type: "seed", baseDurationMs: 60000 },
+  { code: "phantom_fern_seed", name: "환영고사리 씨앗", type: "seed", baseDurationMs: 60000 },
+  { code: "sunset_tree_seed", name: "노을목 씨앗", type: "seed", baseDurationMs: 60000 },
+  { code: "herb", name: "약초", type: "produce", baseDurationMs: 15000 },
+  { code: "red_petal", name: "붉은꽃잎", type: "produce", baseDurationMs: 30000 },
+  { code: "blue_moss", name: "푸른이끼", type: "produce", baseDurationMs: 30000 },
+  { code: "poison_petal", name: "독꽃잎", type: "produce", baseDurationMs: 30000 },
+  { code: "moonlight_mushroom", name: "달빛버섯", type: "produce", baseDurationMs: 60000 },
+  { code: "sunset_leaf", name: "노을잎", type: "produce", baseDurationMs: 60000 },
+  { code: "star_powder", name: "별꽃가루", type: "produce", baseDurationMs: 120000 },
+  { code: "ember_fruit", name: "불씨열매", type: "produce", baseDurationMs: 120000 },
+  { code: "sunset_fruit", name: "노을열매", type: "produce", baseDurationMs: 120000 },
+  { code: "phantom_leaf", name: "환영잎", type: "produce", baseDurationMs: 180000 },
+  { code: "wind_petal", name: "바람꽃잎", type: "produce", baseDurationMs: 180000 },
+  { code: "worn_cauldron", name: "낡은 가마솥", type: "tool", baseDurationMs: 30000 },
+  { code: "copper_cauldron", name: "구리 가마솥", type: "tool", baseDurationMs: 60000 },
+  { code: "silver_cauldron", name: "은 가마솥", type: "tool", baseDurationMs: 120000 },
+  { code: "gold_cauldron", name: "금 가마솥", type: "tool", baseDurationMs: 240000 },
+  { code: "record_fragment_1", name: "기록 조각 1", type: "material", baseDurationMs: 0 },
+  { code: "record_fragment_2", name: "기록 조각 2", type: "material", baseDurationMs: 0 },
+  { code: "record_fragment_3", name: "기록 조각 3", type: "material", baseDurationMs: 0 },
+  { code: "record_fragment_4", name: "기록 조각 4", type: "material", baseDurationMs: 0 },
+  { code: "record_fragment_5", name: "기록 조각 5", type: "material", baseDurationMs: 0 },
+  { code: "restored_tablet", name: "복원된 석판", type: "material", baseDurationMs: 0 },
+  { code: "magic_glass", name: "마법 유리", type: "material", baseDurationMs: 5000 },
+  { code: "copper_piece", name: "구리조각", type: "material", baseDurationMs: 30000 },
+  { code: "mud", name: "진흙", type: "material", baseDurationMs: 30000 },
+  { code: "poison_fang", name: "독이빨", type: "material", baseDurationMs: 30000 },
+  { code: "snake_scale", name: "뱀비늘", type: "material", baseDurationMs: 30000 },
+  { code: "alloy_ingot", name: "합금 주괴", type: "material", baseDurationMs: 60000 },
+  { code: "mana_alloy", name: "마력 합금", type: "material", baseDurationMs: 60000 },
+  { code: "engraving_stone", name: "각인석", type: "material", baseDurationMs: 60000 },
+  { code: "mana_crystal", name: "마력결정", type: "material", baseDurationMs: 60000 },
+  { code: "rusted_armor_piece", name: "녹슨 갑주편", type: "material", baseDurationMs: 60000 },
+  { code: "broken_tablet_piece", name: "깨진 석판 조각", type: "material", baseDurationMs: 60000 },
+  { code: "silver_ore", name: "은광석", type: "material", baseDurationMs: 60000 },
+  { code: "gilt_ingot", name: "금동 주괴", type: "material", baseDurationMs: 90000 },
+  { code: "gold_chunk", name: "황금덩어리", type: "material", baseDurationMs: 90000 },
+  { code: "platinum_ingot", name: "백금 주괴", type: "material", baseDurationMs: 90000 },
+  { code: "amber_ore", name: "호박석 원석", type: "material", baseDurationMs: 120000 },
+  { code: "fluorite_ore", name: "형석 원석", type: "material", baseDurationMs: 120000 },
+  { code: "lava_core", name: "용암핵", type: "material", baseDurationMs: 120000 },
+  { code: "cut_amber", name: "가공된 호박석", type: "material", baseDurationMs: 120000 },
+  { code: "cut_fluorite", name: "가공된 형석", type: "material", baseDurationMs: 120000 },
+  { code: "star_crystal", name: "별의 결정", type: "material", baseDurationMs: 120000 },
+  { code: "alloy_epaulet", name: "합금 견장", type: "equipment", baseDurationMs: 60000 },
+  { code: "mana_ring", name: "마력 반지", type: "equipment", baseDurationMs: 60000 },
+  { code: "copper_dagger", name: "구리 단검", type: "equipment", baseDurationMs: 60000 },
+  { code: "gilt_helmet", name: "금동 투구", type: "equipment", baseDurationMs: 60000 },
+  { code: "gold_amulet", name: "황금 부적", type: "equipment", baseDurationMs: 60000 },
+  { code: "golden_crown", name: "금빛 왕관", type: "equipment", baseDurationMs: 60000 },
+  { code: "lava_emblem", name: "용암 휘장", type: "equipment", baseDurationMs: 60000 },
+  { code: "mana_pendant", name: "마력 펜던트", type: "equipment", baseDurationMs: 60000 },
+  { code: "mud_mask", name: "진흙 가면", type: "equipment", baseDurationMs: 60000 },
+  { code: "platinum_chest", name: "백금 흉갑", type: "equipment", baseDurationMs: 60000 },
+  { code: "scale_bracelet", name: "비늘 팔찌", type: "equipment", baseDurationMs: 60000 },
+  { code: "silver_cloak", name: "은빛 망토", type: "equipment", baseDurationMs: 60000 },
+  { code: "silver_shield", name: "은빛 방패", type: "equipment", baseDurationMs: 60000 },
+  { code: "tablet_shield", name: "석판 방패", type: "equipment", baseDurationMs: 60000 },
+  { code: "blank_rune", name: "백지의 룬", type: "equipment", baseDurationMs: 60000 },
+  { code: "merchant_recommendation", name: "상인 길드 추천서", type: "equipment", baseDurationMs: 60000 },
+  { code: "orb_of_oblivion", name: "망각의 오브", type: "equipment", baseDurationMs: 60000 },
+  { code: "space_knot", name: "공간의 매듭", type: "equipment", baseDurationMs: 60000 },
+  { code: "healing_potion", name: "힐링포션", type: "potion", baseDurationMs: 15000 },
+  { code: "growth_potion", name: "성장포션", type: "potion", baseDurationMs: 30000 },
+  { code: "boost_potion", name: "촉진포션", type: "potion", baseDurationMs: 30000 },
+  { code: "opaque_sediment", name: "불투명한 침전물", type: "potion", baseDurationMs: 30000 },
+  { code: "mana_potion", name: "마나포션", type: "potion", baseDurationMs: 30000 },
+  { code: "vigor_potion", name: "활력포션", type: "potion", baseDurationMs: 30000 },
+  { code: "moss_jelly", name: "이끼젤리", type: "potion", baseDurationMs: 30000 },
+  { code: "paralysis_potion", name: "중독포션", type: "potion", baseDurationMs: 30000 },
+  { code: "numbing_potion", name: "마비포션", type: "potion", baseDurationMs: 30000 },
+  { code: "venom_potion", name: "맹독포션", type: "potion", baseDurationMs: 30000 },
+  { code: "slime_potion", name: "점액포션", type: "potion", baseDurationMs: 30000 },
+  { code: "antidote_potion", name: "해독포션", type: "potion", baseDurationMs: 60000 },
+  { code: "corrosion_potion", name: "부식포션", type: "potion", baseDurationMs: 60000 },
+  { code: "oblivion_potion", name: "망각포션", type: "potion", baseDurationMs: 60000 },
+  { code: "berserk_potion", name: "광폭포션", type: "potion", baseDurationMs: 60000 },
+  { code: "hallucination_spore", name: "환각포자", type: "potion", baseDurationMs: 60000 },
+  { code: "stealth_potion", name: "은신포션", type: "potion", baseDurationMs: 60000 },
+  { code: "blessing_potion", name: "축복포션", type: "potion", baseDurationMs: 120000 },
+  { code: "courage_potion", name: "용기포션", type: "potion", baseDurationMs: 120000 },
+  { code: "dream_potion", name: "몽환포션", type: "potion", baseDurationMs: 120000 },
+  { code: "explosion_potion", name: "폭발포션", type: "potion", baseDurationMs: 120000 },
+  { code: "foresight_potion", name: "예지포션", type: "potion", baseDurationMs: 120000 },
+  { code: "meteor_potion", name: "유성포션", type: "potion", baseDurationMs: 120000 },
+  { code: "plague_potion", name: "역병포션", type: "potion", baseDurationMs: 120000 },
+  { code: "purify_potion", name: "정화포션", type: "potion", baseDurationMs: 120000 },
+  { code: "resist_potion", name: "저항포션", type: "potion", baseDurationMs: 120000 },
+  { code: "steam_potion", name: "증기포션", type: "potion", baseDurationMs: 120000 },
+  { code: "afterimage_potion", name: "잔상포션", type: "potion", baseDurationMs: 180000 },
+  { code: "breeze_potion", name: "미풍포션", type: "potion", baseDurationMs: 180000 },
+  { code: "comet_potion", name: "혜성포션", type: "potion", baseDurationMs: 180000 },
+  { code: "daydream_potion", name: "백일몽포션", type: "potion", baseDurationMs: 180000 },
+  { code: "dissipation_potion", name: "소산포션", type: "potion", baseDurationMs: 180000 },
+  { code: "flame_potion", name: "화염포션", type: "potion", baseDurationMs: 180000 },
+  { code: "gale_potion", name: "돌풍포션", type: "potion", baseDurationMs: 180000 },
+  { code: "swiftwind_potion", name: "질풍포션", type: "potion", baseDurationMs: 180000 },
+  { code: "heatwave_potion", name: "열풍포션", type: "potion", baseDurationMs: 180000 },
+  { code: "poison_mist_potion", name: "독안개포션", type: "potion", baseDurationMs: 180000 },
+  { code: "mirage_potion", name: "신기루포션", type: "potion", baseDurationMs: 180000 },
+  { code: "fog_potion", name: "안개포션", type: "potion", baseDurationMs: 180000 },
+  { code: "phantom_potion", name: "환영포션", type: "potion", baseDurationMs: 180000 },
+  { code: "revival_potion", name: "회생포션", type: "potion", baseDurationMs: 180000 },
+  { code: "sunset_potion", name: "석양포션", type: "potion", baseDurationMs: 180000 },
+  { code: "afterglow_potion", name: "노을포션", type: "potion", baseDurationMs: 180000 },
+  { code: "dissolve_potion", name: "용해포션", type: "potion", baseDurationMs: 240000 },
+  { code: "copper_diamond_box", name: "구리 다이아 상자", type: "misc", baseDurationMs: 30000 },
+  { code: "silver_diamond_box", name: "은제 다이아 상자", type: "misc", baseDurationMs: 30000 },
+  { code: "gold_diamond_box", name: "금제 다이아 상자", type: "misc", baseDurationMs: 30000 },
+  { code: "large_diamond_box", name: "대형 다이아 상자", type: "misc", baseDurationMs: 30000 },
+];
 
 const canvas = document.getElementById("field-canvas");
 const ctx = canvas.getContext("2d");
@@ -319,6 +441,9 @@ const tabButtons = [...document.querySelectorAll(".tab-button")];
 const plannerView = document.getElementById("planner-view");
 const calculatorView = document.getElementById("calculator-view");
 const materialsView = document.getElementById("materials-view");
+const timeView = document.getElementById("time-view");
+const skillsView = document.getElementById("skills-view");
+const skillPointsView = document.getElementById("skill-points-view");
 const recipeTargetSelect = document.getElementById("recipe-target-select");
 const recipeTargetLevelInput = document.getElementById("recipe-target-level");
 const recipeTargetCountInput = document.getElementById("recipe-target-count");
@@ -328,6 +453,35 @@ const recipeBreakdown = document.getElementById("recipe-breakdown");
 const recipeList = document.getElementById("recipe-list");
 const cauldronBoard = document.getElementById("cauldron-board");
 const materialUsageSummary = document.getElementById("material-usage-summary");
+const timeStatusBanner = document.getElementById("time-status-banner");
+const timeOperationModeSelect = document.getElementById("time-operation-mode");
+const timeCauldronEnhancementInput = document.getElementById("time-cauldron-enhancement");
+const timeFlameMasteryInput = document.getElementById("time-flame-mastery");
+const timeFirePotionLevelInput = document.getElementById("time-fire-potion-level");
+const timeItemASelect = document.getElementById("time-item-a-select");
+const timeItemBSelect = document.getElementById("time-item-b-select");
+const timeItemAEnhancementInput = document.getElementById("time-item-a-enhancement");
+const timeItemBEnhancementInput = document.getElementById("time-item-b-enhancement");
+const timeItemASummary = document.getElementById("time-item-a-summary");
+const timeItemBSummary = document.getElementById("time-item-b-summary");
+const timeResultPrimary = document.getElementById("time-result-primary");
+const timeFormulaBreakdown = document.getElementById("time-formula-breakdown");
+const timeResultNotes = document.getElementById("time-result-notes");
+const timeTableFilterInput = document.getElementById("time-table-filter");
+const timeDurationTableBody = document.getElementById("time-duration-table-body");
+const skillTreeSummary = document.getElementById("skill-tree-summary");
+const skillCategoryTabs = document.getElementById("skill-category-tabs");
+const skillTreeGrid = document.getElementById("skill-tree-grid");
+const spCurrentLevelInput = document.getElementById("sp-current-level");
+const spCurrentExpInput = document.getElementById("sp-current-exp");
+const spPotionLevelInput = document.getElementById("sp-potion-level");
+const spPotionCountInput = document.getElementById("sp-potion-count");
+const spForecastSummary = document.getElementById("sp-forecast-summary");
+const spTargetCurrentLevelInput = document.getElementById("sp-target-current-level");
+const spTargetCurrentExpInput = document.getElementById("sp-target-current-exp");
+const spTargetLevelInput = document.getElementById("sp-target-level");
+const spTargetPotionLevelInput = document.getElementById("sp-target-potion-level");
+const spTargetSummary = document.getElementById("sp-target-summary");
 const openCauldronSlotsButton = document.createElement("button");
 openCauldronSlotsButton.id = "cauldron-slots-button";
 openCauldronSlotsButton.className = "slot-open-button";
@@ -340,9 +494,49 @@ const SLOT_STORAGE_KEY = "alchansia-layout-slots-v1";
 const CALCULATOR_STORAGE_KEY = "alchansia-calculator-v1";
 const MATERIAL_STORAGE_KEY = "alchansia-materials-v1";
 const CAULDRON_SLOT_STORAGE_KEY = "alchansia-cauldron-slots-v1";
+const TIME_CALCULATOR_STORAGE_KEY = "alchansia-time-calculator-v1";
+const SKILL_TREE_STORAGE_KEY = "alchansia-skill-tree-v1";
+const SKILL_POINT_STORAGE_KEY = "alchansia-skill-points-v1";
 const SHARE_PARAM = "layout";
 const MAX_LAYOUT_SLOTS = 10;
 const ENHANCE_EXPECTED_COST = 3;
+const MILLIS_IN_SECOND = 1000;
+const MINUTE_MILLIS = 60000;
+const GROWTH_POTION_NAME = "성장포션";
+const SKILL_NAME_ALIASES = {
+  유령깔때기: "유령깔대기",
+};
+const SKILL_CATEGORY_THEMES = {
+  경작: {
+    treeId: "farming",
+    icon: "",
+    tint: "#739a4a",
+    glow: "rgba(115, 154, 74, 0.28)",
+    accent: "#4c6d2b",
+  },
+  연성: {
+    treeId: "brewing",
+    icon: "",
+    tint: "#8d5a2f",
+    glow: "rgba(191, 122, 45, 0.28)",
+    accent: "#6f4320",
+  },
+  마나: {
+    treeId: "mana",
+    icon: "",
+    tint: "#4f82b8",
+    glow: "rgba(79, 130, 184, 0.28)",
+    accent: "#345e8c",
+  },
+  계약: {
+    treeId: "contract",
+    icon: "",
+    tint: "#8d4f6d",
+    glow: "rgba(141, 79, 109, 0.28)",
+    accent: "#69384f",
+  },
+};
+const SKILL_LANE_LABELS = ["기초", "전개", "심화", "핵심", "완성", "초월"];
 const CENTER_CELL = { col: 3, row: 3 };
 const BASE_BOUNDS = {
   minCol: 0,
@@ -361,6 +555,12 @@ const state = {
   activeSlotMode: "layout",
   recipes: [],
   potionRecipes: [],
+  timedItems: [],
+  timedItemByCode: new Map(),
+  skills: [],
+  skillLookup: new Map(),
+  skillLevels: new Map(),
+  activeSkillCategory: "",
   cauldrons: Object.fromEntries(CAULDRON_TIERS.map((tier) => [tier.id, []])),
   recipeSelections: new Map(),
   hover: null,
@@ -370,6 +570,27 @@ const state = {
   boostPotionActive: false,
   panLocked: true,
   statsCollapsed: window.matchMedia("(max-width: 720px)").matches,
+  skillPointInputs: {
+    forecastCurrentLevel: 1,
+    forecastCurrentExp: 0,
+    forecastPotionLevel: 0,
+    forecastPotionCount: 1,
+    targetCurrentLevel: 1,
+    targetCurrentExp: 0,
+    targetLevel: 2,
+    targetPotionLevel: 0,
+  },
+  timeCalculatorInputs: {
+    operationMode: "auto",
+    cauldronEnhancement: 0,
+    flameMastery: 0,
+    firePotionLevel: -1,
+    itemACode: "",
+    itemBCode: "",
+    itemAEnhancement: 0,
+    itemBEnhancement: 0,
+    tableFilter: "",
+  },
   view: {
     scale: 1,
     offsetX: 0,
@@ -908,6 +1129,9 @@ function setActiveTab(tabId) {
   plannerView.hidden = tabId !== "planner";
   calculatorView.hidden = tabId !== "calculator";
   materialsView.hidden = tabId !== "materials";
+  timeView.hidden = tabId !== "time";
+  skillsView.hidden = tabId !== "skills";
+  skillPointsView.hidden = tabId !== "skill-points";
 
   tabButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.tab === tabId);
@@ -917,6 +1141,12 @@ function setActiveTab(tabId) {
     resizeCanvas();
   } else if (tabId === "materials") {
     renderMaterialCalculator();
+  } else if (tabId === "time") {
+    updateTimeCalculator();
+  } else if (tabId === "skills") {
+    renderSkillTree();
+  } else if (tabId === "skill-points") {
+    renderSkillPointCalculator();
   }
 }
 
@@ -1006,6 +1236,145 @@ function parsePotionCsv(text) {
       durationSeconds: parseDurationSeconds(duration),
       price: Number(price) || 0,
     }));
+}
+
+function normalizeSkillName(name) {
+  const normalized = normalizeItemName(String(name || ""));
+  return SKILL_NAME_ALIASES[normalized] ?? normalized;
+}
+
+function parseSkillPrerequisites(text) {
+  if (!text || text.trim() === "-") {
+    return [];
+  }
+
+  return parseCsvLine(text)
+    .flatMap((cell) => String(cell).split(","))
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => {
+      const match = entry.match(/^(.+?)\s*>=\s*(\d+)$/);
+      if (!match) {
+        return null;
+      }
+
+      return {
+        rawName: match[1].trim(),
+        skillKey: normalizeSkillName(match[1]),
+        minLevel: Number(match[2]) || 0,
+      };
+    })
+    .filter(Boolean);
+}
+
+function parseSkillCsv(text) {
+  const [headerLine, ...lines] = text.replace(/^\uFEFF/, "").trim().split(/\r?\n/);
+  if (!headerLine) {
+    return [];
+  }
+
+  return lines
+    .map(parseCsvLine)
+    .filter((parts) => parts.length >= 5)
+    .map(([category, name, maxLevel, prerequisites, description], index) => ({
+      id: `skill-${index}-${normalizeSkillName(name)}`,
+      key: normalizeSkillName(name),
+      category: String(category || "").trim(),
+      name: String(name || "").trim(),
+      maxLevel: Math.max(1, Number(maxLevel) || 1),
+      prerequisites: parseSkillPrerequisites(prerequisites),
+      description: String(description || "").trim(),
+    }));
+}
+
+function currentSkillTreePayload() {
+  return {
+    levels: [...state.skillLevels.entries()],
+    activeCategory: state.activeSkillCategory,
+  };
+}
+
+function saveSkillTreeToStorage() {
+  try {
+    window.localStorage.setItem(SKILL_TREE_STORAGE_KEY, JSON.stringify(currentSkillTreePayload()));
+  } catch (error) {
+    // Ignore storage errors so the skill tree remains usable.
+  }
+}
+
+function loadSkillTreeFromStorage() {
+  try {
+    const raw = window.localStorage.getItem(SKILL_TREE_STORAGE_KEY);
+    if (!raw) {
+      return;
+    }
+
+    const payload = JSON.parse(raw);
+    state.skillLevels = new Map(Array.isArray(payload.levels) ? payload.levels : []);
+    if (typeof payload.activeCategory === "string") {
+      state.activeSkillCategory = payload.activeCategory;
+    }
+  } catch (error) {
+    state.skillLevels = new Map();
+  }
+}
+
+function currentSkillPointPayload() {
+  return { ...state.skillPointInputs };
+}
+
+function saveSkillPointInputs() {
+  try {
+    window.localStorage.setItem(SKILL_POINT_STORAGE_KEY, JSON.stringify(currentSkillPointPayload()));
+  } catch (error) {
+    // Ignore storage errors so the calculator remains usable.
+  }
+}
+
+function loadSkillPointInputs() {
+  try {
+    const raw = window.localStorage.getItem(SKILL_POINT_STORAGE_KEY);
+    if (!raw) {
+      return;
+    }
+
+    const payload = JSON.parse(raw);
+    state.skillPointInputs = {
+      ...state.skillPointInputs,
+      ...payload,
+    };
+  } catch (error) {
+    // Ignore corrupt storage and keep defaults.
+  }
+}
+
+function currentTimeCalculatorPayload() {
+  return { ...state.timeCalculatorInputs };
+}
+
+function saveTimeCalculatorInputs() {
+  try {
+    window.localStorage.setItem(TIME_CALCULATOR_STORAGE_KEY, JSON.stringify(currentTimeCalculatorPayload()));
+  } catch (error) {
+    // Ignore storage errors so the calculator remains usable.
+  }
+}
+
+function loadTimeCalculatorInputs() {
+  try {
+    const raw = window.localStorage.getItem(TIME_CALCULATOR_STORAGE_KEY);
+    if (!raw) {
+      return;
+    }
+
+    const payload = JSON.parse(raw);
+    state.timeCalculatorInputs = {
+      ...state.timeCalculatorInputs,
+      ...payload,
+    };
+  } catch (error) {
+    // Ignore corrupt storage and keep defaults.
+  }
 }
 
 function getRecipeCollections() {
@@ -1709,9 +2078,765 @@ async function loadPotionRecipes() {
       }
     });
     renderMaterialCalculator();
+    renderSkillPointCalculator();
   } catch (error) {
     cauldronBoard.innerHTML = `<div class="result-card"><p>포션.csv를 불러오지 못했습니다.</p></div>`;
     materialUsageSummary.innerHTML = "";
+  }
+}
+
+function initializeTimeCalculatorData() {
+  state.timedItems = [...STATIC_TIMED_ITEMS].sort(
+    (left, right) => left.name.localeCompare(right.name, "ko") || left.code.localeCompare(right.code, "ko"),
+  );
+  state.timedItemByCode = new Map(state.timedItems.map((item) => [item.code, item]));
+
+  if (!state.timeCalculatorInputs.itemACode || !state.timedItemByCode.has(state.timeCalculatorInputs.itemACode)) {
+    state.timeCalculatorInputs.itemACode = state.timedItems.find((item) => item.name === "약초")?.code ?? state.timedItems[0]?.code ?? "";
+  }
+  if (!state.timeCalculatorInputs.itemBCode || !state.timedItemByCode.has(state.timeCalculatorInputs.itemBCode)) {
+    state.timeCalculatorInputs.itemBCode =
+      state.timedItems.find((item) => item.name === "푸른이끼")?.code ?? state.timedItems[1]?.code ?? state.timedItems[0]?.code ?? "";
+  }
+
+  populateTimeItemSelectors();
+  syncTimeCalculatorInputs();
+  renderTimeDurationTable();
+  updateTimeCalculator();
+  setTimeStatus("ready", `기본시간 표 ${formatNumber(state.timedItems.length, 0)}개 항목을 불러왔습니다.`);
+}
+
+function setTimeStatus(type, message) {
+  if (!timeStatusBanner) {
+    return;
+  }
+
+  timeStatusBanner.className = `status-banner ${type}`;
+  timeStatusBanner.textContent = message;
+}
+
+function populateTimeItemSelectors() {
+  if (!timeItemASelect || !timeItemBSelect) {
+    return;
+  }
+
+  const options = state.timedItems
+    .map(
+      (item) =>
+        `<option value="${item.code}">${item.name} · ${item.code} · ${formatWorkDuration(item.baseDurationMs)}</option>`,
+    )
+    .join("");
+
+  timeItemASelect.innerHTML = options;
+  timeItemBSelect.innerHTML = options;
+}
+
+function syncTimeCalculatorInputs() {
+  if (!timeOperationModeSelect) {
+    return;
+  }
+
+  timeOperationModeSelect.value = state.timeCalculatorInputs.operationMode;
+  timeCauldronEnhancementInput.value = String(state.timeCalculatorInputs.cauldronEnhancement);
+  timeFlameMasteryInput.value = String(state.timeCalculatorInputs.flameMastery);
+  timeFirePotionLevelInput.value = String(state.timeCalculatorInputs.firePotionLevel);
+  timeItemASelect.value = state.timeCalculatorInputs.itemACode;
+  timeItemBSelect.value = state.timeCalculatorInputs.itemBCode;
+  timeItemAEnhancementInput.value = String(state.timeCalculatorInputs.itemAEnhancement);
+  timeItemBEnhancementInput.value = String(state.timeCalculatorInputs.itemBEnhancement);
+  timeTableFilterInput.value = state.timeCalculatorInputs.tableFilter;
+}
+
+function renderTimeDurationTable() {
+  if (!timeDurationTableBody) {
+    return;
+  }
+
+  const query = state.timeCalculatorInputs.tableFilter.trim().toLowerCase();
+  const rows = state.timedItems.filter((item) => {
+    if (!query) {
+      return true;
+    }
+    return item.name.toLowerCase().includes(query) || item.code.toLowerCase().includes(query);
+  });
+
+  timeDurationTableBody.innerHTML = rows
+    .map(
+      (item) => `
+        <tr>
+          <td><strong>${item.name}</strong></td>
+          <td>${item.code}</td>
+          <td>${timeItemTypeLabel(item.type)}</td>
+          <td>${formatWorkDuration(item.baseDurationMs)}</td>
+        </tr>
+      `,
+    )
+    .join("");
+}
+
+function timeItemTypeLabel(type) {
+  return {
+    seed: "씨앗",
+    produce: "작물",
+    tool: "도구",
+    material: "재료",
+    equipment: "장비",
+    potion: "포션",
+    misc: "기타",
+  }[type] ?? type;
+}
+
+function resolveTimeOperationMode(selectedMode, itemA, itemB) {
+  if (selectedMode !== "auto") {
+    return selectedMode;
+  }
+
+  if (itemA.code === itemB.code && itemA.type !== "produce") {
+    return "enhancement";
+  }
+
+  if (itemA.type === "produce" && itemB.type === "produce") {
+    return "potion";
+  }
+
+  return "craft";
+}
+
+function timeOperationLabel(mode) {
+  return {
+    potion: "양조",
+    craft: "제작",
+    enhancement: "강화",
+    engrave: "각인",
+    utility: "유틸",
+  }[mode] ?? "작업";
+}
+
+function enhancedWorkDuration(baseDurationMs, enhancement) {
+  return Math.round(baseDurationMs * (2 ** Math.max(0, enhancement)));
+}
+
+function flameMasteryReduction(flameMastery, cauldronEnhancement) {
+  if (flameMastery <= 0) {
+    return 0;
+  }
+
+  return compoundedReduction(0.01, flameMastery, cauldronEnhancement + 1);
+}
+
+function compoundedReduction(base, level, count) {
+  const factor = 1 - base * level;
+  let result = 1;
+  for (let index = 0; index < count; index += 1) {
+    result *= factor;
+  }
+  return 1 - result;
+}
+
+function formatWorkDuration(durationMs) {
+  if (!Number.isFinite(durationMs) || durationMs <= 0) {
+    return "0초";
+  }
+
+  const totalSeconds = durationMs / MILLIS_IN_SECOND;
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Number((totalSeconds % 60).toFixed(totalSeconds % 1 === 0 ? 0 : 1));
+  const parts = [];
+
+  if (hours) {
+    parts.push(`${hours}시간`);
+  }
+  if (minutes) {
+    parts.push(`${minutes}분`);
+  }
+  if (seconds || parts.length === 0) {
+    parts.push(`${seconds}초`);
+  }
+
+  return parts.join(" ");
+}
+
+function formatReductionPercent(value) {
+  return `${(value * 100).toFixed(2)}%`;
+}
+
+function renderTimeItemSummary(item, enhancement, effectiveMs) {
+  return `
+    <strong>${item.name}</strong>
+    <p>코드: <code>${item.code}</code></p>
+    <p>종류: ${timeItemTypeLabel(item.type)}</p>
+    <p>기본시간: ${formatWorkDuration(item.baseDurationMs)}</p>
+    <p>강화 반영시간: ${formatWorkDuration(effectiveMs)}</p>
+  `;
+}
+
+function buildTimeNotes(mode, itemA, itemB, flameReduction, fireReduction) {
+  const notes = [
+    {
+      title: "작업 판정",
+      body: `현재 조합은 <strong>${timeOperationLabel(mode)}</strong> 기준으로 계산했습니다.`,
+    },
+    {
+      title: "기준 시간 규칙",
+      body: "결과물 시간이 아니라 재료 두 개의 강화 반영시간 중 더 긴 값을 기준으로 사용합니다.",
+    },
+  ];
+
+  if (flameReduction > 0) {
+    notes.push({
+      title: "불꽃 숙련 적용",
+      body: `가마솥 강화 ${state.timeCalculatorInputs.cauldronEnhancement} 기준으로 총 ${formatReductionPercent(flameReduction)} 감소가 반영됐습니다.`,
+    });
+  }
+
+  if (mode === "enhancement") {
+    notes.push({
+      title: "강화 작업 주의",
+      body: "같은 아이템을 합칠 때는 두 재료 시간이 같아서 계산이 단순합니다.",
+    });
+  }
+
+  if (fireReduction > 0) {
+    notes.push({
+      title: "불꽃 포션 적용",
+      body: `강화 작업에서만 적용되며 현재 ${formatReductionPercent(fireReduction)} 추가 감소가 들어갔습니다.`,
+    });
+  }
+
+  if (itemA.baseDurationMs === 0 || itemB.baseDurationMs === 0) {
+    notes.push({
+      title: "0초 예외 아이템",
+      body: "기록 조각처럼 기본시간이 0초인 항목은 다른 재료 쪽 시간이 그대로 기준이 됩니다.",
+    });
+  }
+
+  return notes;
+}
+
+function updateTimeCalculator() {
+  if (!state.timedItems.length || !timeResultPrimary) {
+    return;
+  }
+
+  const itemA = state.timedItemByCode.get(state.timeCalculatorInputs.itemACode);
+  const itemB = state.timedItemByCode.get(state.timeCalculatorInputs.itemBCode);
+  if (!itemA || !itemB) {
+    return;
+  }
+
+  const effectiveA = enhancedWorkDuration(itemA.baseDurationMs, state.timeCalculatorInputs.itemAEnhancement);
+  const effectiveB = enhancedWorkDuration(itemB.baseDurationMs, state.timeCalculatorInputs.itemBEnhancement);
+  const baseWorkMs = Math.max(effectiveA, effectiveB);
+  const mode = resolveTimeOperationMode(state.timeCalculatorInputs.operationMode, itemA, itemB);
+  const flameReduction = flameMasteryReduction(
+    state.timeCalculatorInputs.flameMastery,
+    state.timeCalculatorInputs.cauldronEnhancement,
+  );
+  const afterFlameMs = Math.round(baseWorkMs * (1 - flameReduction));
+  const fireReduction =
+    mode === "enhancement" && state.timeCalculatorInputs.firePotionLevel >= 0
+      ? Math.min(0.95, (state.timeCalculatorInputs.firePotionLevel + 1) * 0.1)
+      : 0;
+  const finalMs = Math.round(afterFlameMs * (1 - fireReduction));
+
+  timeItemASummary.innerHTML = renderTimeItemSummary(itemA, state.timeCalculatorInputs.itemAEnhancement, effectiveA);
+  timeItemBSummary.innerHTML = renderTimeItemSummary(itemB, state.timeCalculatorInputs.itemBEnhancement, effectiveB);
+
+  timeResultPrimary.innerHTML = `
+    <div class="time-result-kicker">${timeOperationLabel(mode)} 예상 시간</div>
+    <div class="time-result-time">${formatWorkDuration(finalMs)}</div>
+    <p class="time-result-detail">
+      기준시간은 두 재료 중 더 긴 시간인 <strong>${formatWorkDuration(baseWorkMs)}</strong>입니다.
+      이후 불꽃 숙련과 불꽃 포션 보정을 순서대로 적용했습니다.
+    </p>
+  `;
+
+  timeFormulaBreakdown.innerHTML = [
+    {
+      title: "1. 재료별 강화 반영 시간",
+      body: `${itemA.name}: ${formatWorkDuration(itemA.baseDurationMs)} × 2^${state.timeCalculatorInputs.itemAEnhancement} = ${formatWorkDuration(effectiveA)}<br>${itemB.name}: ${formatWorkDuration(itemB.baseDurationMs)} × 2^${state.timeCalculatorInputs.itemBEnhancement} = ${formatWorkDuration(effectiveB)}`,
+    },
+    {
+      title: "2. 작업 기준시간",
+      body: `max(${formatWorkDuration(effectiveA)}, ${formatWorkDuration(effectiveB)}) = <strong>${formatWorkDuration(baseWorkMs)}</strong>`,
+    },
+    {
+      title: "3. 불꽃 숙련 보정",
+      body: `감소율 = ${formatReductionPercent(flameReduction)}<br>적용 후 시간 = ${formatWorkDuration(afterFlameMs)}`,
+    },
+    {
+      title: "4. 불꽃 포션 보정",
+      body:
+        mode === "enhancement" && fireReduction > 0
+          ? `감소율 = ${formatReductionPercent(fireReduction)}<br>최종 시간 = <strong>${formatWorkDuration(finalMs)}</strong>`
+          : `적용 없음${mode !== "enhancement" ? " (강화 작업에서만 적용)" : ""}`,
+    },
+  ]
+    .map(
+      (section) => `
+        <div class="time-formula-row">
+          <strong>${section.title}</strong>
+          <div>${section.body}</div>
+        </div>
+      `,
+    )
+    .join("");
+
+  timeResultNotes.innerHTML = buildTimeNotes(mode, itemA, itemB, flameReduction, fireReduction)
+    .map(
+      (note) => `
+        <div class="time-note-row">
+          <strong>${note.title}</strong>
+          <div>${note.body}</div>
+        </div>
+      `,
+    )
+    .join("");
+
+  saveTimeCalculatorInputs();
+}
+
+function skillCategories() {
+  return [...new Set(state.skills.map((skill) => skill.category))];
+}
+
+function getSkillLevel(skillKey) {
+  return Math.max(0, Number(state.skillLevels.get(skillKey)) || 0);
+}
+
+function skillPrerequisitesMet(skill) {
+  return skill.prerequisites.every((requirement) => getSkillLevel(requirement.skillKey) >= requirement.minLevel);
+}
+
+function canIncreaseSkill(skill) {
+  return getSkillLevel(skill.key) < skill.maxLevel && skillPrerequisitesMet(skill);
+}
+
+function wouldBreakDependentSkills(skillKey, nextLevel) {
+  return state.skills.some((candidate) => {
+    const learnedLevel = getSkillLevel(candidate.key);
+    if (learnedLevel <= 0) {
+      return false;
+    }
+
+    return candidate.prerequisites.some(
+      (requirement) => requirement.skillKey === skillKey && nextLevel < requirement.minLevel,
+    );
+  });
+}
+
+function canDecreaseSkill(skill) {
+  const currentLevel = getSkillLevel(skill.key);
+  if (currentLevel <= 0) {
+    return false;
+  }
+
+  return !wouldBreakDependentSkills(skill.key, currentLevel - 1);
+}
+
+function skillMissingRequirements(skill) {
+  return skill.prerequisites.filter((requirement) => getSkillLevel(requirement.skillKey) < requirement.minLevel);
+}
+
+function skillPointTotals() {
+  let spent = 0;
+  state.skillLevels.forEach((level) => {
+    spent += Math.max(0, Number(level) || 0);
+  });
+  return spent;
+}
+
+function skillCategoryMeta(category) {
+  return SKILL_CATEGORY_THEMES[category] ?? {
+    treeId: normalizeSkillName(category),
+    icon: "",
+    tint: "#7f6a49",
+    glow: "rgba(127, 106, 73, 0.22)",
+    accent: "#5f4d36",
+  };
+}
+
+function learnedSkillCount(category) {
+  return state.skills.filter((skill) => skill.category === category && getSkillLevel(skill.key) > 0).length;
+}
+
+function buildSkillColumns(categorySkills) {
+  const byKey = new Map(categorySkills.map((skill) => [skill.key, skill]));
+  const memo = new Map();
+  const visiting = new Set();
+
+  const depthFor = (skill) => {
+    if (memo.has(skill.key)) {
+      return memo.get(skill.key);
+    }
+
+    if (visiting.has(skill.key)) {
+      return 0;
+    }
+
+    visiting.add(skill.key);
+    const prerequisiteDepths = skill.prerequisites
+      .map((requirement) => byKey.get(requirement.skillKey))
+      .filter(Boolean)
+      .map(depthFor);
+    visiting.delete(skill.key);
+
+    const depth = prerequisiteDepths.length ? Math.max(...prerequisiteDepths) + 1 : 0;
+    memo.set(skill.key, depth);
+    return depth;
+  };
+
+  const columns = [];
+  categorySkills.forEach((skill, order) => {
+    const depth = depthFor(skill);
+    if (!columns[depth]) {
+      columns[depth] = [];
+    }
+
+    columns[depth].push({ ...skill, depth, order });
+  });
+
+  return columns
+    .filter(Boolean)
+    .map((column) =>
+      column.sort((left, right) => {
+        const leftLevel = Math.max(...left.prerequisites.map((requirement) => requirement.minLevel), 0);
+        const rightLevel = Math.max(...right.prerequisites.map((requirement) => requirement.minLevel), 0);
+        return leftLevel - rightLevel || left.order - right.order;
+      }),
+    );
+}
+
+function skillLaneLabel(index) {
+  return SKILL_LANE_LABELS[index] ?? `Tier ${index + 1}`;
+}
+
+function renderSkillCategoryTabs() {
+  if (!skillCategoryTabs) {
+    return;
+  }
+
+  const categories = skillCategories();
+  if (!categories.length) {
+    skillCategoryTabs.innerHTML = "";
+    return;
+  }
+
+  if (!categories.includes(state.activeSkillCategory)) {
+    [state.activeSkillCategory] = categories;
+  }
+
+  skillCategoryTabs.innerHTML = categories
+    .map((category) => {
+      const theme = skillCategoryMeta(category);
+      const learned = learnedSkillCount(category);
+      const total = state.skills.filter((skill) => skill.category === category).length;
+      return `
+        <button
+          class="subtab-button ${category === state.activeSkillCategory ? "active" : ""}"
+          type="button"
+          data-category="${category}"
+          style="--tab-tint:${theme.tint}; --tab-glow:${theme.glow}; --tab-accent:${theme.accent};"
+        >
+          <span class="subtab-icon-wrap">
+            ${theme.icon ? `<img src="${theme.icon}" alt="" class="subtab-icon" />` : `<span class="subtab-icon-fallback">${category.slice(0, 1)}</span>`}
+          </span>
+          <span class="subtab-copy">
+            <strong>${category}</strong>
+            <small>${learned} / ${total}</small>
+          </span>
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function renderSkillTree() {
+  if (!skillTreeGrid || !skillTreeSummary) {
+    return;
+  }
+
+  if (!state.skills.length) {
+    skillTreeSummary.innerHTML = `<p>skills.csv를 불러오는 중입니다.</p>`;
+    skillTreeGrid.innerHTML = "";
+    skillCategoryTabs.innerHTML = "";
+    return;
+  }
+
+  renderSkillCategoryTabs();
+  const currentCategory = state.activeSkillCategory || skillCategories()[0];
+  const categorySkills = state.skills.filter((skill) => skill.category === currentCategory);
+  const categoryColumns = buildSkillColumns(categorySkills);
+  const totalSpent = skillPointTotals();
+  const unlockedCount = state.skills.filter(skillPrerequisitesMet).length;
+  const categoryLearned = learnedSkillCount(currentCategory);
+  const theme = skillCategoryMeta(currentCategory);
+
+  skillTreeSummary.innerHTML = `
+    <div class="skill-summary-shell">
+      <div class="skill-summary-chip" style="--summary-tint:${theme.tint}; --summary-glow:${theme.glow};">
+        ${theme.icon ? `<img src="${theme.icon}" alt="" class="skill-summary-icon" />` : ""}
+        <div>
+          <strong>${currentCategory}</strong>
+          <p>${categoryLearned} / ${categorySkills.length} 습득</p>
+        </div>
+      </div>
+      <div class="skill-summary-stats">
+        <p>사용 SP: <strong>${formatNumber(totalSpent, 0)}</strong></p>
+        <p>해금 스킬: <strong>${formatNumber(unlockedCount, 0)}</strong> / ${formatNumber(state.skills.length, 0)}</p>
+      </div>
+    </div>
+  `;
+
+  skillTreeGrid.innerHTML = `
+    <div class="skill-tree-shell">
+      ${categoryColumns
+        .map(
+          (column, laneIndex) => `
+            <section class="skill-lane">
+              <header class="skill-lane-header">
+                <p class="skill-lane-kicker">Tier ${laneIndex + 1}</p>
+                <strong>${skillLaneLabel(laneIndex)}</strong>
+              </header>
+              <div class="skill-lane-stack">
+                ${column
+                  .map((skill) => {
+                    const currentLevel = getSkillLevel(skill.key);
+                    const met = skillPrerequisitesMet(skill);
+                    const missing = skillMissingRequirements(skill);
+                    const prerequisiteChips = skill.prerequisites.length
+                      ? skill.prerequisites
+                          .map((requirement) => {
+                            const metRequirement = getSkillLevel(requirement.skillKey) >= requirement.minLevel;
+                            return `
+                              <span class="skill-prereq-chip ${metRequirement ? "met" : "missing"}">
+                                ${state.skillLookup.get(requirement.skillKey)?.name ?? requirement.rawName} ${requirement.minLevel}
+                              </span>
+                            `;
+                          })
+                          .join("")
+                      : `<span class="skill-prereq-chip root">시작 노드</span>`;
+                    const statusText = currentLevel > 0 ? "활성" : met ? "해금 가능" : "잠김";
+                    const statusClass = currentLevel > 0 ? "learned" : met ? "ready" : "locked";
+
+                    return `
+                      <article class="skill-card ${met ? "" : "locked"} ${currentLevel > 0 ? "learned" : ""}" data-skill-key="${skill.key}" style="--skill-accent:${theme.tint}; --skill-glow:${theme.glow};">
+                        <div class="skill-card-rail"></div>
+                        <div class="skill-card-header">
+                          <div>
+                            <strong>${skill.name}</strong>
+                            <p>Lv ${currentLevel} / ${skill.maxLevel}</p>
+                          </div>
+                          <span class="skill-state-badge ${statusClass}">${statusText}</span>
+                        </div>
+                        <div class="skill-card-meta">
+                          <span class="skill-chip">Tier ${skill.depth + 1}</span>
+                          <span class="skill-chip">최대 ${skill.maxLevel}</span>
+                          <span class="skill-chip">${skill.prerequisites.length ? `선행 ${skill.prerequisites.length}` : "시작"}</span>
+                        </div>
+                        <p class="skill-description">${skill.description}</p>
+                        <div class="skill-prereq-group">
+                          <p class="skill-prereq-label">선행</p>
+                          <div class="skill-prereq-list">${prerequisiteChips}</div>
+                        </div>
+                        <p class="skill-prereq ${missing.length ? "missing" : "met"}">
+                          ${missing.length
+                            ? `필요: ${missing
+                                .map(
+                                  (requirement) =>
+                                    `${state.skillLookup.get(requirement.skillKey)?.name ?? requirement.rawName} ${requirement.minLevel}`,
+                                )
+                                .join(" / ")}`
+                            : "선행 조건 충족"}
+                        </p>
+                        <div class="skill-card-footer">
+                          <div class="skill-stepper">
+                            <button type="button" data-action="decrease-skill" data-skill-key="${skill.key}" ${canDecreaseSkill(skill) ? "" : "disabled"}>-</button>
+                            <button type="button" data-action="increase-skill" data-skill-key="${skill.key}" ${canIncreaseSkill(skill) ? "" : "disabled"}>+</button>
+                          </div>
+                        </div>
+                      </article>
+                    `;
+                  })
+                  .join("")}
+              </div>
+            </section>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
+}
+
+function updateSkillLevel(skillKey, delta) {
+  const skill = state.skillLookup.get(skillKey);
+  if (!skill) {
+    return;
+  }
+
+  const nextLevel = Math.max(0, Math.min(skill.maxLevel, getSkillLevel(skillKey) + delta));
+  if (delta > 0 && !canIncreaseSkill(skill)) {
+    return;
+  }
+  if (delta < 0 && wouldBreakDependentSkills(skillKey, nextLevel)) {
+    return;
+  }
+
+  state.skillLevels.set(skillKey, nextLevel);
+  if (nextLevel <= 0) {
+    state.skillLevels.delete(skillKey);
+  }
+  saveSkillTreeToStorage();
+  renderSkillTree();
+}
+
+function syncSkillPointInputsFromState() {
+  if (!spCurrentLevelInput) {
+    return;
+  }
+
+  spCurrentLevelInput.value = String(state.skillPointInputs.forecastCurrentLevel);
+  spCurrentExpInput.value = String(state.skillPointInputs.forecastCurrentExp);
+  spPotionLevelInput.value = String(state.skillPointInputs.forecastPotionLevel);
+  spPotionCountInput.value = String(state.skillPointInputs.forecastPotionCount);
+  spTargetCurrentLevelInput.value = String(state.skillPointInputs.targetCurrentLevel);
+  spTargetCurrentExpInput.value = String(state.skillPointInputs.targetCurrentExp);
+  spTargetLevelInput.value = String(state.skillPointInputs.targetLevel);
+  spTargetPotionLevelInput.value = String(state.skillPointInputs.targetPotionLevel);
+}
+
+function expRequiredForNextLevel(level) {
+  return 2 ** Math.floor(Math.max(1, level) / 5);
+}
+
+function potionExperience(level) {
+  return 4 ** Math.max(0, Number(level) || 0);
+}
+
+function simulateLevelProgress(currentLevel, currentExp, gainedExp) {
+  let level = Math.max(1, Number(currentLevel) || 1);
+  let exp = Math.max(0, Number(currentExp) || 0) + Math.max(0, Number(gainedExp) || 0);
+  let spent = 0;
+
+  while (true) {
+    const needed = expRequiredForNextLevel(level);
+    if (exp < needed) {
+      return {
+        level,
+        exp,
+        nextLevelExp: needed,
+        totalSp: level,
+        gainedLevels: level - Math.max(1, Number(currentLevel) || 1),
+        spentExp: spent,
+      };
+    }
+
+    exp -= needed;
+    spent += needed;
+    level += 1;
+  }
+}
+
+function potionsRequiredForTargetLevel(currentLevel, currentExp, targetLevel, potionLevel) {
+  const normalized = simulateLevelProgress(currentLevel, currentExp, 0);
+  const safeTargetLevel = Math.max(1, Number(targetLevel) || 1);
+  const baseLevel = normalized.level;
+  if (safeTargetLevel <= baseLevel) {
+    return 0;
+  }
+
+  const potionExp = potionExperience(potionLevel);
+  if (potionExp <= 0) {
+    return Infinity;
+  }
+
+  let totalExpNeeded = 0;
+  let level = baseLevel;
+  let exp = normalized.exp;
+  while (level < safeTargetLevel) {
+    const needed = expRequiredForNextLevel(level);
+    const deficit = Math.max(0, needed - exp);
+    totalExpNeeded += deficit;
+    exp = 0;
+    level += 1;
+  }
+
+  return Math.ceil(totalExpNeeded / potionExp);
+}
+
+function renderSkillPointCalculator() {
+  if (!spForecastSummary || !spTargetSummary) {
+    return;
+  }
+
+  syncSkillPointInputsFromState();
+
+  const forecastPotionExp = potionExperience(state.skillPointInputs.forecastPotionLevel);
+  const forecastTotalExpGain = forecastPotionExp * Math.max(1, state.skillPointInputs.forecastPotionCount);
+  const forecastResult = simulateLevelProgress(
+    state.skillPointInputs.forecastCurrentLevel,
+    state.skillPointInputs.forecastCurrentExp,
+    forecastTotalExpGain,
+  );
+  const growthPotionRecipe = state.potionRecipes.find((recipe) => normalizeItemName(recipe.name) === normalizeItemName(GROWTH_POTION_NAME));
+
+  spForecastSummary.innerHTML = `
+    <p>포션 1개 경험치 : <strong>${formatNumber(forecastPotionExp, 0)}</strong></p>
+    <p>총 획득 경험치 : <strong>${formatNumber(forecastTotalExpGain, 0)}</strong></p>
+    <p>예상 레벨 : <strong>Lv ${formatNumber(forecastResult.level, 0)}</strong></p>
+    <p>남는 경험치 : <strong>${formatNumber(forecastResult.exp, 0)}</strong> / ${formatNumber(forecastResult.nextLevelExp, 0)}</p>
+    <p>예상 총 SP : <strong>${formatNumber(forecastResult.totalSp, 0)}</strong></p>
+    ${
+      growthPotionRecipe
+        ? `<p class="skill-point-note">성장포션 레시피: ${growthPotionRecipe.material1} + ${growthPotionRecipe.material2}</p>`
+        : ""
+    }
+  `;
+
+  const neededPotions = potionsRequiredForTargetLevel(
+    state.skillPointInputs.targetCurrentLevel,
+    state.skillPointInputs.targetCurrentExp,
+    state.skillPointInputs.targetLevel,
+    state.skillPointInputs.targetPotionLevel,
+  );
+  const targetPotionExp = potionExperience(state.skillPointInputs.targetPotionLevel);
+  const reached = simulateLevelProgress(
+    state.skillPointInputs.targetCurrentLevel,
+    state.skillPointInputs.targetCurrentExp,
+    neededPotions * targetPotionExp,
+  );
+
+  spTargetSummary.innerHTML = `
+    <p>포션 1개 경험치 : <strong>${formatNumber(targetPotionExp, 0)}</strong></p>
+    <p>필요 성장포션 : <strong>${formatNumber(neededPotions, 0)}개</strong></p>
+    <p>도달 예상 레벨 : <strong>Lv ${formatNumber(reached.level, 0)}</strong></p>
+    <p>남는 경험치 : <strong>${formatNumber(reached.exp, 0)}</strong> / ${formatNumber(reached.nextLevelExp, 0)}</p>
+  `;
+
+  saveSkillPointInputs();
+}
+
+async function loadSkills() {
+  try {
+    const response = await fetch("./skills.csv", { cache: "no-store" });
+    if (!response.ok) {
+      throw new Error("Skill csv load failed");
+    }
+
+    state.skills = parseSkillCsv(await response.text());
+    state.skillLookup = new Map(state.skills.map((skill) => [skill.key, skill]));
+    if (!state.activeSkillCategory) {
+      state.activeSkillCategory = skillCategories()[0] ?? "";
+    }
+    renderSkillTree();
+  } catch (error) {
+    if (skillTreeSummary) {
+      skillTreeSummary.innerHTML = `<p>skills.csv를 불러오지 못했습니다.</p>`;
+    }
+    if (skillTreeGrid) {
+      skillTreeGrid.innerHTML = "";
+    }
   }
 }
 
@@ -2913,6 +4038,71 @@ cauldronBoard.addEventListener("change", (event) => {
   renderMaterialCalculator();
 });
 
+skillCategoryTabs?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-category]");
+  if (!button) {
+    return;
+  }
+
+  state.activeSkillCategory = button.dataset.category;
+  saveSkillTreeToStorage();
+  renderSkillTree();
+});
+
+skillTreeGrid?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-action][data-skill-key]");
+  if (!button) {
+    return;
+  }
+
+  const delta = button.dataset.action === "increase-skill" ? 1 : -1;
+  updateSkillLevel(button.dataset.skillKey, delta);
+});
+
+[
+  [spCurrentLevelInput, "forecastCurrentLevel", 1],
+  [spCurrentExpInput, "forecastCurrentExp", 0],
+  [spPotionLevelInput, "forecastPotionLevel", 0],
+  [spPotionCountInput, "forecastPotionCount", 1],
+  [spTargetCurrentLevelInput, "targetCurrentLevel", 1],
+  [spTargetCurrentExpInput, "targetCurrentExp", 0],
+  [spTargetLevelInput, "targetLevel", 1],
+  [spTargetPotionLevelInput, "targetPotionLevel", 0],
+].forEach(([input, key, minimum]) => {
+  input?.addEventListener("input", () => {
+    state.skillPointInputs[key] = Math.max(minimum, Number(input.value) || minimum);
+    renderSkillPointCalculator();
+  });
+});
+
+[
+  [timeOperationModeSelect, "operationMode", "change"],
+  [timeCauldronEnhancementInput, "cauldronEnhancement", "input"],
+  [timeFlameMasteryInput, "flameMastery", "input"],
+  [timeFirePotionLevelInput, "firePotionLevel", "input"],
+  [timeItemASelect, "itemACode", "change"],
+  [timeItemBSelect, "itemBCode", "change"],
+  [timeItemAEnhancementInput, "itemAEnhancement", "input"],
+  [timeItemBEnhancementInput, "itemBEnhancement", "input"],
+].forEach(([input, key, eventName]) => {
+  input?.addEventListener(eventName, () => {
+    if (key === "operationMode" || key === "itemACode" || key === "itemBCode") {
+      state.timeCalculatorInputs[key] = input.value;
+    } else if (key === "firePotionLevel") {
+      state.timeCalculatorInputs[key] = Math.max(-1, Number(input.value) || -1);
+    } else {
+      state.timeCalculatorInputs[key] = Math.max(0, Number(input.value) || 0);
+    }
+    updateTimeCalculator();
+  });
+});
+
+timeTableFilterInput?.addEventListener("input", () => {
+  state.timeCalculatorInputs.tableFilter = timeTableFilterInput.value;
+  renderTimeDurationTable();
+  saveTimeCalculatorInputs();
+});
+
 copyLayoutButton.addEventListener("click", () => {
   copyLayoutToClipboard();
 });
@@ -2956,6 +4146,7 @@ resetButton.addEventListener("click", () => {
 window.render_game_to_text = () =>
   JSON.stringify({
     origin: "top-left, x increases right, y increases down",
+    activeTab: state.activeTab,
     totalCells: state.cells.size,
     selectedCropId: state.selectedCropId,
     cells: [...state.cells].map(parseKey),
@@ -2965,6 +4156,8 @@ window.render_game_to_text = () =>
     })),
     desertTiles: [...state.desertTiles].map(parseKey),
     expandableSlots: state.addSlots,
+    skillCategory: state.activeSkillCategory,
+    skillPointsSpent: skillPointTotals(),
   });
 
 window.advanceTime = () => {
@@ -2998,6 +4191,9 @@ loadLayoutSlotsFromStorage();
 loadCauldronSlotsFromStorage();
 loadCalculatorStateFromStorage();
 loadCauldronStateFromStorage();
+loadTimeCalculatorInputs();
+loadSkillTreeFromStorage();
+loadSkillPointInputs();
 const loadedSharedLayout = loadLayoutFromUrl();
 if (!loadedSharedLayout) {
   loadLayoutFromStorage();
@@ -3011,11 +4207,15 @@ renderBoostPotionButton();
 renderLayoutSlots();
 renderRecipeCalculator();
 renderMaterialCalculator();
+initializeTimeCalculatorData();
+renderSkillTree();
+renderSkillPointCalculator();
 draw();
 resizeCanvas();
 startCanvasResolutionWatcher();
 loadRecipes();
 loadPotionRecipes();
+loadSkills();
 window.addEventListener("resize", syncResponsivePanels);
 window.addEventListener("hashchange", () => {
   applySharedLayoutFromCurrentUrl(true);

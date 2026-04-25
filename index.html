@@ -21,6 +21,9 @@
         <button class="tab-button active" type="button" data-tab="planner">배치 테스트</button>
         <button class="tab-button" type="button" data-tab="calculator">기댓값 계산기</button>
         <button class="tab-button" type="button" data-tab="materials">재료 소모량 계산기</button>
+        <button class="tab-button" type="button" data-tab="time">시간 계산기</button>
+        <button class="tab-button" type="button" data-tab="skills">스킬 트리</button>
+        <button class="tab-button" type="button" data-tab="skill-points">스킬 포인트 계산기</button>
       </nav>
 
       <section id="planner-view" class="tab-view">
@@ -118,6 +121,187 @@
           <section class="calculator-content">
             <div id="cauldron-board" class="cauldron-board"></div>
             <div id="material-usage-summary" class="result-card"></div>
+          </section>
+        </section>
+      </section>
+
+      <section id="time-view" class="tab-view" hidden>
+        <section class="calculator-card">
+          <header class="calculator-header">
+            <div>
+              <h2>시간 계산기</h2>
+              <p>양조, 강화, 제작, 각인 작업의 예상 시간을 실제 게임 공식 기준으로 계산합니다.</p>
+            </div>
+          </header>
+
+          <section class="calculator-content">
+            <div id="time-status-banner" class="status-banner loading">게임 데이터를 불러오는 중입니다.</div>
+
+            <div class="form-grid time-controls-grid">
+              <label class="field">
+                <span>작업 종류</span>
+                <select id="time-operation-mode">
+                  <option value="auto">자동 판별</option>
+                  <option value="potion">양조</option>
+                  <option value="craft">제작</option>
+                  <option value="enhancement">강화</option>
+                  <option value="engrave">각인</option>
+                  <option value="utility">유틸</option>
+                </select>
+              </label>
+              <label class="field">
+                <span>가마솥 강화</span>
+                <input id="time-cauldron-enhancement" type="number" min="0" max="20" value="0" />
+              </label>
+              <label class="field">
+                <span>불꽃 숙련</span>
+                <input id="time-flame-mastery" type="number" min="0" max="20" value="0" />
+              </label>
+              <label class="field">
+                <span>불꽃 포션 강화</span>
+                <input id="time-fire-potion-level" type="number" min="-1" max="20" value="-1" />
+              </label>
+            </div>
+
+            <div class="time-item-grid">
+              <article class="result-card time-item-card">
+                <h3>재료 1</h3>
+                <label class="field">
+                  <span>아이템</span>
+                  <select id="time-item-a-select"></select>
+                </label>
+                <label class="field">
+                  <span>강화 수치</span>
+                  <input id="time-item-a-enhancement" type="number" min="0" max="20" value="0" />
+                </label>
+                <div id="time-item-a-summary" class="time-item-summary"></div>
+              </article>
+
+              <article class="result-card time-item-card">
+                <h3>재료 2</h3>
+                <label class="field">
+                  <span>아이템</span>
+                  <select id="time-item-b-select"></select>
+                </label>
+                <label class="field">
+                  <span>강화 수치</span>
+                  <input id="time-item-b-enhancement" type="number" min="0" max="20" value="0" />
+                </label>
+                <div id="time-item-b-summary" class="time-item-summary"></div>
+              </article>
+            </div>
+
+            <div class="time-result-layout">
+              <article class="result-card time-primary-card">
+                <h3>예상 시간</h3>
+                <div id="time-result-primary" class="time-result-primary"></div>
+                <div id="time-formula-breakdown" class="time-formula-breakdown"></div>
+              </article>
+
+              <article class="result-card">
+                <h3>계산 메모</h3>
+                <div id="time-result-notes" class="time-notes-list"></div>
+              </article>
+            </div>
+
+            <article class="result-card">
+              <h3>기본시간 빠른 참조</h3>
+              <label class="field time-filter-field">
+                <span>검색</span>
+                <input id="time-table-filter" type="search" placeholder="아이템 이름 또는 코드" />
+              </label>
+              <div class="time-table-wrap">
+                <table class="mini-table time-mini-table">
+                  <thead>
+                    <tr>
+                      <th>아이템</th>
+                      <th>코드</th>
+                      <th>종류</th>
+                      <th>기본시간</th>
+                    </tr>
+                  </thead>
+                  <tbody id="time-duration-table-body"></tbody>
+                </table>
+              </div>
+            </article>
+          </section>
+        </section>
+      </section>
+
+      <section id="skills-view" class="tab-view" hidden>
+        <section class="calculator-card">
+          <header class="calculator-header">
+            <div>
+              <h2>스킬 트리</h2>
+              <p>카테고리별 스킬을 찍고 선행 조건 충족 여부를 바로 확인합니다.</p>
+            </div>
+          </header>
+
+          <section class="calculator-content">
+            <div id="skill-tree-summary" class="result-card"></div>
+            <div id="skill-category-tabs" class="subtab-bar" aria-label="스킬 카테고리"></div>
+            <div id="skill-tree-grid" class="skill-tree-grid"></div>
+          </section>
+        </section>
+      </section>
+
+      <section id="skill-points-view" class="tab-view" hidden>
+        <section class="calculator-card">
+          <header class="calculator-header">
+            <div>
+              <h2>스킬 포인트 계산기</h2>
+              <p>성장포션 강화 단계에 따라 예상 레벨과 필요한 물약 수를 계산합니다.</p>
+            </div>
+          </header>
+
+          <section class="calculator-content">
+            <div class="skill-point-grid">
+              <section class="result-card">
+                <h3>레벨 예측</h3>
+                <div class="form-grid skill-form-grid">
+                  <label class="field">
+                    <span>현재 레벨</span>
+                    <input id="sp-current-level" type="number" min="1" max="999" value="1" />
+                  </label>
+                  <label class="field">
+                    <span>현재 경험치</span>
+                    <input id="sp-current-exp" type="number" min="0" max="999999999" value="0" />
+                  </label>
+                  <label class="field">
+                    <span>성장포션 강화</span>
+                    <input id="sp-potion-level" type="number" min="0" max="20" value="0" />
+                  </label>
+                  <label class="field">
+                    <span>먹을 포션 개수</span>
+                    <input id="sp-potion-count" type="number" min="1" max="999999999" value="1" />
+                  </label>
+                </div>
+                <div id="sp-forecast-summary" class="result-card nested-result"></div>
+              </section>
+
+              <section class="result-card">
+                <h3>목표 레벨 달성</h3>
+                <div class="form-grid skill-form-grid">
+                  <label class="field">
+                    <span>현재 레벨</span>
+                    <input id="sp-target-current-level" type="number" min="1" max="999" value="1" />
+                  </label>
+                  <label class="field">
+                    <span>현재 경험치</span>
+                    <input id="sp-target-current-exp" type="number" min="0" max="999999999" value="0" />
+                  </label>
+                  <label class="field">
+                    <span>목표 레벨</span>
+                    <input id="sp-target-level" type="number" min="1" max="999" value="2" />
+                  </label>
+                  <label class="field">
+                    <span>성장포션 강화</span>
+                    <input id="sp-target-potion-level" type="number" min="0" max="20" value="0" />
+                  </label>
+                </div>
+                <div id="sp-target-summary" class="result-card nested-result"></div>
+              </section>
+            </div>
           </section>
         </section>
       </section>
