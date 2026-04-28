@@ -4132,6 +4132,7 @@ function buildPlannerAnalysis() {
         totalProduced: 0,
         lastUpdate: currentMs,
         lastPollinateAt: undefined,
+        spawnedByWind: true,
         conditions: spawn.plantId === "poison_flower" ? ["poison_immune"] : [],
       };
     }
@@ -4207,7 +4208,62 @@ function buildPlannerAnalysis() {
       poisoned: cell.conditions.includes("poisonous") || cell.plant?.conditions.includes("poisoned") ? 1 : 0,
       sunBuff: cell.conditions.includes("sunlit") ? 1 : 0,
       dead: Boolean(cell.plant && cell.plant.health <= 0),
+      windAnchor: 0,
+      windSource: 0,
+      windTarget: 0,
+      windPreviewCropIds: [],
+      windSpawned: Boolean(cell.plant?.spawnedByWind),
     });
+  }
+
+  const isSnapshotMature = (cell) =>
+    Boolean(
+      cell?.plant
+      && cell.plant.health > 0
+      && cell.plant.growStartedAt != null
+      && !cell.plant.conditions.includes("poisoned")
+      && snapshotTime >= cell.plant.growStartedAt + plannerGrowthTime(
+        cell.plant.id,
+        cell.conditions,
+        skillLevels.soilMastery,
+        cell.plant.enhancement,
+      ),
+    );
+
+  const isSnapshotPollinationSource = (cell) =>
+    Boolean(
+      cell?.plant
+      && cell.plant.health > 0
+      && cell.plant.growStartedAt != null
+      && cell.plant.id !== "wind_blossom",
+    );
+
+  for (const cell of cells.values()) {
+    if (!isSnapshotMature(cell) || cell.plant.id !== "wind_blossom") {
+      continue;
+    }
+
+    for (const delta of cardinalDeltas) {
+      const sourceKey = cellKey(cell.col + delta.col, cell.row + delta.row);
+      const targetKey = cellKey(cell.col + delta.col * 2, cell.row + delta.row * 2);
+      const sourceCell = cells.get(sourceKey);
+      const targetCell = cells.get(targetKey);
+      if (
+        !sourceCell
+        || !targetCell
+        || !isSnapshotPollinationSource(sourceCell)
+        || targetCell.plant
+      ) {
+        continue;
+      }
+
+      effects.get(cell.key).windAnchor += 1;
+      effects.get(sourceKey).windSource += 1;
+      effects.get(targetKey).windTarget += 1;
+      if (!effects.get(targetKey).windPreviewCropIds.includes(sourceCell.plant.cropId)) {
+        effects.get(targetKey).windPreviewCropIds.push(sourceCell.plant.cropId);
+      }
+    }
   }
 
   return {
@@ -4259,6 +4315,15 @@ function drawEffectOverlay(points, effect) {
       stripeSpacing: 11,
     });
   }
+
+  if (effect.windTarget > 0) {
+    drawDiamond(points, {
+      fill: "rgba(111, 234, 215, 0.24)",
+      stroke: "#2fb9aa",
+      lineWidth: 1.8,
+      dash: [6, 5],
+    });
+  }
 }
 
 function drawStripedDiamond(points, options) {
@@ -4298,6 +4363,64 @@ function drawStripedDiamond(points, options) {
   ctx.lineWidth = options.lineWidth ?? 1.2;
   ctx.stroke();
   ctx.restore();
+}
+
+function drawWindPreview(col, row, effect) {
+  if (!effect.windPreviewCropIds?.length) {
+    return;
+  }
+
+  const center = gridToPixel(col, row);
+  const previewIds = effect.windPreviewCropIds
+    .map((cropId) => cropById.get(cropId))
+    .filter(Boolean)
+    .slice(0, 4);
+
+  if (!previewIds.length) {
+    return;
+  }
+
+  const drawPreviewToken = (crop, x, y, size, alpha) => {
+    const cropImage = cropImageCache.get(crop.id);
+    const hasCropImage = cropImage?.complete && cropImage.naturalWidth > 0;
+
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    if (hasCropImage) {
+      ctx.drawImage(cropImage, x - size / 2, y - size / 2, size, size);
+    } else {
+      const gradient = ctx.createLinearGradient(x - size / 2, y - size / 2, x + size / 2, y + size / 2);
+      gradient.addColorStop(0, crop.accentColor ?? crop.color);
+      gradient.addColorStop(1, crop.color);
+      ctx.beginPath();
+      ctx.arc(x, y, size / 2, 0, Math.PI * 2);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+      ctx.fillStyle = "rgba(44, 30, 16, 0.92)";
+      ctx.font = `700 ${Math.round(size * 0.36)}px "Malgun Gothic", sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(crop.short, x, y + 1);
+    }
+    ctx.restore();
+  };
+
+  if (previewIds.length === 1) {
+    drawPreviewToken(previewIds[0], center.x, center.y, CELL_SIZE * 0.92, 0.42);
+    return;
+  }
+
+  const offsets = [
+    { x: -13, y: -12 },
+    { x: 13, y: -12 },
+    { x: -13, y: 12 },
+    { x: 13, y: 12 },
+  ];
+
+  previewIds.forEach((crop, index) => {
+    const offset = offsets[index];
+    drawPreviewToken(crop, center.x + offset.x, center.y + offset.y, CELL_SIZE * 0.52, 0.55);
+  });
 }
 
 function drawPlant(col, row, crop, enhancement, effect, isHovered) {
@@ -4368,6 +4491,27 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered) {
     ctx.restore();
   }
 
+  if (effect.windAnchor > 0) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(36, 173, 160, 0.95)";
+    ctx.lineWidth = 2.5;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius + 7, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  if (effect.windSource > 0) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(104, 226, 209, 0.92)";
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius + 3, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   if (enhancement > 0) {
     ctx.save();
     ctx.fillStyle = "rgba(69, 40, 16, 0.92)";
@@ -4379,6 +4523,29 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered) {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(`+${enhancement}`, center.x + 17, center.y - 16);
+    ctx.restore();
+  }
+
+  if (effect.windSpawned) {
+    ctx.save();
+    ctx.strokeStyle = "rgba(31, 167, 156, 0.96)";
+    ctx.lineWidth = 2.4;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.arc(center.x, center.y, radius + 7, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = "#1fa79c";
+    ctx.beginPath();
+    ctx.roundRect(center.x - 16, center.y + 12, 32, 16, 7);
+    ctx.fill();
+    ctx.fillStyle = "#f5fff8";
+    ctx.font = '700 10px "Segoe UI Symbol", "Malgun Gothic", sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("✦ 바람", center.x, center.y + 20);
     ctx.restore();
   }
 
@@ -4503,6 +4670,8 @@ function draw(options = {}) {
         effect,
         isHovered,
       );
+    } else if (effect.windPreviewCropIds?.length) {
+      drawWindPreview(col, row, effect);
     }
   }
 
