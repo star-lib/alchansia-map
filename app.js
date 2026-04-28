@@ -434,11 +434,23 @@ toolPalette.setAttribute("aria-label", "맵 도구 선택");
 const cropSection = document.createElement("section");
 cropSection.className = "palette-section";
 cropSection.innerHTML = '<p class="palette-title">씨앗</p>';
+const cropEnhancementControl = document.createElement("label");
+cropEnhancementControl.className = "planner-enhancement-control";
+cropEnhancementControl.innerHTML = `
+  <span class="planner-enhancement-copy">
+    <strong>씨앗 강화</strong>
+    <small id="planner-enhancement-hint">맥읽기 Lv 1이 있어야 강화 씨앗을 사용할 수 있습니다.</small>
+  </span>
+  <input id="planner-crop-enhancement" type="number" min="0" max="20" value="0" />
+`;
 const paletteAnchor = cropPalette.parentElement;
 paletteAnchor.insertBefore(paletteDock, cropPalette);
 toolSection.appendChild(toolPalette);
+cropSection.appendChild(cropEnhancementControl);
 cropSection.appendChild(cropPalette);
 paletteDock.append(toolSection, cropSection);
+const cropEnhancementInput = document.getElementById("planner-crop-enhancement");
+const cropEnhancementHint = document.getElementById("planner-enhancement-hint");
 const slotTooltip = document.getElementById("slot-tooltip");
 const toggleStatsButton = document.getElementById("toggle-stats-button");
 const productionSummary = document.getElementById("production-summary");
@@ -727,6 +739,7 @@ const state = {
   hoverPoint: null,
   activeTab: "planner",
   selectedCropId: CROPS[0].id,
+  selectedCropEnhancement: 0,
   boostPotionActive: false,
   panLocked: true,
   statsCollapsed: window.matchMedia("(max-width: 720px)").matches,
@@ -800,6 +813,53 @@ function parseKey(key) {
   return { col, row };
 }
 
+function clampEnhancementLevel(value) {
+  return Math.max(0, Math.min(20, Number(value) || 0));
+}
+
+function cropSupportsPlannerEnhancement(cropId) {
+  return Boolean(CROP_TO_PLANT_ID[cropId]);
+}
+
+function normalizePlantPlacement(value) {
+  if (typeof value === "string" && cropSupportsPlannerEnhancement(value)) {
+    return { cropId: value, enhancement: 0 };
+  }
+
+  if (value && typeof value === "object" && cropSupportsPlannerEnhancement(value.cropId)) {
+    return {
+      cropId: value.cropId,
+      enhancement: clampEnhancementLevel(value.enhancement),
+    };
+  }
+
+  return null;
+}
+
+function placementsMatch(left, right) {
+  return Boolean(left && right)
+    && left.cropId === right.cropId
+    && clampEnhancementLevel(left.enhancement) === clampEnhancementLevel(right.enhancement);
+}
+
+function plannerEnhancementUnlocked() {
+  return plannerSkillLevel(PLANNER_SKILL_KEYS.veinReading) > 0;
+}
+
+function selectedCropEnhancementLevel() {
+  if (!cropSupportsPlannerEnhancement(state.selectedCropId) || !plannerEnhancementUnlocked()) {
+    return 0;
+  }
+  return clampEnhancementLevel(state.selectedCropEnhancement);
+}
+
+function selectedCropPlacement() {
+  return {
+    cropId: state.selectedCropId,
+    enhancement: selectedCropEnhancementLevel(),
+  };
+}
+
 function logicalPoint(col, row) {
   return {
     x: (col + row) / 2,
@@ -810,9 +870,12 @@ function logicalPoint(col, row) {
 function currentLayoutPayload() {
   return {
     cells: [...state.cells],
-    plants: [...state.plants.entries()],
+    plants: [...state.plants.entries()]
+      .map(([key, placement]) => [key, normalizePlantPlacement(placement)])
+      .filter((entry) => entry[1]),
     desertTiles: [...state.desertTiles],
     selectedCropId: state.selectedCropId,
+    selectedCropEnhancement: clampEnhancementLevel(state.selectedCropEnhancement),
   };
 }
 
@@ -822,13 +885,16 @@ function applyLayoutPayload(payload) {
     : createStartingCells();
   const plants = new Map(
     Array.isArray(payload?.plants)
-      ? payload.plants.filter(
-          (entry) =>
-            Array.isArray(entry) &&
-            entry.length === 2 &&
-            typeof entry[0] === "string" &&
-            cropById.has(entry[1]),
-        )
+      ? payload.plants
+          .map((entry) => {
+            if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string") {
+              return null;
+            }
+
+            const placement = normalizePlantPlacement(entry[1]);
+            return placement ? [entry[0], placement] : null;
+          })
+          .filter(Boolean)
       : [],
   );
   const desertTiles = new Set(
@@ -844,6 +910,7 @@ function applyLayoutPayload(payload) {
   if (cropById.has(payload?.selectedCropId)) {
     state.selectedCropId = payload.selectedCropId;
   }
+  state.selectedCropEnhancement = clampEnhancementLevel(payload?.selectedCropEnhancement);
 }
 
 function encodeLayoutPayload(payload) {
@@ -1303,6 +1370,7 @@ function setActiveTab(tabId) {
   });
 
   if (tabId === "planner") {
+    renderPalette();
     resizeCanvas();
   } else if (tabId === "materials") {
     renderMaterialCalculator();
@@ -3339,6 +3407,7 @@ function updateSkillLevel(skillKey, delta) {
   }
   saveSkillTreeToStorage();
   renderSkillTree();
+  renderPalette();
   renderRecipeCalculator();
   renderMaterialCalculator();
   updateTimeCalculator();
@@ -3349,6 +3418,7 @@ function resetSkillLevels() {
   state.skillLevels = new Map();
   saveSkillTreeToStorage();
   renderSkillTree();
+  renderPalette();
   renderRecipeCalculator();
   renderMaterialCalculator();
   updateTimeCalculator();
@@ -3779,11 +3849,13 @@ function buildPlannerAnalysis() {
     });
   }
 
-  for (const [key, cropId] of state.plants.entries()) {
+  for (const [key, storedPlacement] of state.plants.entries()) {
     const cell = cells.get(key);
+    const placement = normalizePlantPlacement(storedPlacement);
+    const cropId = placement?.cropId;
     const plantId = CROP_TO_PLANT_ID[cropId];
     const spec = PLANT_SPECS[plantId];
-    if (!cell || !spec) {
+    if (!cell || !spec || !placement) {
       continue;
     }
 
@@ -3794,7 +3866,7 @@ function buildPlannerAnalysis() {
     cell.plant = {
       cropId,
       id: plantId,
-      enhancement: 0,
+      enhancement: placement.enhancement,
       health: 100,
       growStartedAt: manuallyWatered || spec.waterKills ? startMs : null,
       wateredAt: manuallyWatered ? startMs : null,
@@ -4231,7 +4303,7 @@ function drawStripedDiamond(points, options) {
   ctx.restore();
 }
 
-function drawPlant(col, row, crop, effect, isHovered) {
+function drawPlant(col, row, crop, enhancement, effect, isHovered) {
   const center = gridToPixel(col, row);
   const radius = CELL_SIZE * 0.4;
   const cropImage = cropImageCache.get(crop.id);
@@ -4296,6 +4368,20 @@ function drawPlant(col, row, crop, effect, isHovered) {
     ctx.moveTo(center.x + 14, center.y - 14);
     ctx.lineTo(center.x - 14, center.y + 14);
     ctx.stroke();
+    ctx.restore();
+  }
+
+  if (enhancement > 0) {
+    ctx.save();
+    ctx.fillStyle = "rgba(69, 40, 16, 0.92)";
+    ctx.beginPath();
+    ctx.roundRect(center.x + 6, center.y - 24, 22, 16, 6);
+    ctx.fill();
+    ctx.fillStyle = "#fff6df";
+    ctx.font = '700 10px "Segoe UI", sans-serif';
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(`+${enhancement}`, center.x + 17, center.y - 16);
     ctx.restore();
   }
 
@@ -4410,9 +4496,16 @@ function draw(options = {}) {
       ctx.restore();
     }
 
-    const cropId = state.plants.get(key);
-    if (cropId) {
-      drawPlant(col, row, cropById.get(cropId), effect, isHovered);
+    const placement = normalizePlantPlacement(state.plants.get(key));
+    if (placement) {
+      drawPlant(
+        col,
+        row,
+        cropById.get(placement.cropId),
+        placement.enhancement,
+        effect,
+        isHovered,
+      );
     }
   }
 
@@ -4443,7 +4536,11 @@ function draw(options = {}) {
   ctx.restore();
 
   const plantedCount = state.plants.size;
-  summary.textContent = `총 ${state.cells.size}칸, 작물 ${plantedCount}개. 점선 칸은 확장, 밭 칸은 ${cropById.get(state.selectedCropId).name} 심기입니다.`;
+  const selectedCrop = cropById.get(state.selectedCropId);
+  const selectedCropLabel = cropSupportsPlannerEnhancement(state.selectedCropId) && selectedCropEnhancementLevel() > 0
+    ? `${selectedCrop.name} +${selectedCropEnhancementLevel()}`
+    : selectedCrop.name;
+  summary.textContent = `총 ${state.cells.size}칸, 작물 ${plantedCount}개. 점선 칸은 확장, 밭 칸은 ${selectedCropLabel} 심기입니다.`;
   updateSlotTooltip();
   renderProductionStats();
 }
@@ -4610,9 +4707,27 @@ function renderPaletteGroup(target, items) {
   });
 }
 
+function renderPlannerEnhancementControl() {
+  const cropSelected = cropSupportsPlannerEnhancement(state.selectedCropId);
+  const unlocked = plannerEnhancementUnlocked();
+  cropEnhancementControl.hidden = !cropSelected;
+
+  if (!cropSelected) {
+    return;
+  }
+
+  const storedLevel = clampEnhancementLevel(state.selectedCropEnhancement);
+  cropEnhancementInput.value = String(unlocked ? storedLevel : 0);
+  cropEnhancementInput.disabled = !unlocked;
+  cropEnhancementHint.textContent = unlocked
+    ? `현재 +${storedLevel} 강화 씨앗을 심습니다.`
+    : "맥읽기 Lv 1이 있어야 강화 씨앗을 사용할 수 있습니다.";
+}
+
 function renderPalette() {
   renderPaletteGroup(toolPalette, TOOLS);
   renderPaletteGroup(cropPalette, CROPS);
+  renderPlannerEnhancementControl();
 }
 
 function renderProductionStats() {
@@ -4843,11 +4958,12 @@ function applyClick(point) {
       state.desertTiles.add(cell.key);
     }
   } else {
-    const existingCropId = state.plants.get(cell.key);
-    if (existingCropId === state.selectedCropId) {
+    const existingPlacement = normalizePlantPlacement(state.plants.get(cell.key));
+    const nextPlacement = selectedCropPlacement();
+    if (placementsMatch(existingPlacement, nextPlacement)) {
       state.plants.delete(cell.key);
     } else {
-      state.plants.set(cell.key, state.selectedCropId);
+      state.plants.set(cell.key, nextPlacement);
     }
   }
 
@@ -5232,6 +5348,13 @@ timeTableFilterInput?.addEventListener("input", () => {
   saveTimeCalculatorInputs();
 });
 
+cropEnhancementInput?.addEventListener("input", () => {
+  state.selectedCropEnhancement = clampEnhancementLevel(cropEnhancementInput.value);
+  saveLayoutToStorage();
+  renderPlannerEnhancementControl();
+  draw();
+});
+
 copyLayoutButton.addEventListener("click", () => {
   copyLayoutToClipboard();
 });
@@ -5278,11 +5401,20 @@ window.render_game_to_text = () =>
     activeTab: state.activeTab,
     totalCells: state.cells.size,
     selectedCropId: state.selectedCropId,
+    selectedCropEnhancement: selectedCropEnhancementLevel(),
     cells: [...state.cells].map(parseKey),
-    plants: [...state.plants.entries()].map(([key, cropId]) => ({
-      ...parseKey(key),
-      cropId,
-    })),
+    plants: [...state.plants.entries()]
+      .map(([key, placement]) => {
+        const normalizedPlacement = normalizePlantPlacement(placement);
+        return normalizedPlacement
+          ? {
+              ...parseKey(key),
+              cropId: normalizedPlacement.cropId,
+              enhancement: normalizedPlacement.enhancement,
+            }
+          : null;
+      })
+      .filter(Boolean),
     desertTiles: [...state.desertTiles].map(parseKey),
     expandableSlots: state.addSlots,
     skillCategory: state.activeSkillCategory,
@@ -5298,10 +5430,18 @@ window.__planner_debug = {
   getAddSlots: () => state.addSlots.map((slot) => ({ ...slot })),
   getCells: () => [...state.cells].map(parseKey),
   getPlants: () =>
-    [...state.plants.entries()].map(([key, cropId]) => ({
-      ...parseKey(key),
-      cropId,
-    })),
+    [...state.plants.entries()]
+      .map(([key, placement]) => {
+        const normalizedPlacement = normalizePlantPlacement(placement);
+        return normalizedPlacement
+          ? {
+              ...parseKey(key),
+              cropId: normalizedPlacement.cropId,
+              enhancement: normalizedPlacement.enhancement,
+            }
+          : null;
+      })
+      .filter(Boolean),
   getDesertTiles: () => [...state.desertTiles].map(parseKey),
   gridToScreen: (col, row) => {
     const center = gridToPixel(col, row);
@@ -5313,6 +5453,11 @@ window.__planner_debug = {
       renderPalette();
       draw();
     }
+  },
+  selectCropEnhancement: (level) => {
+    state.selectedCropEnhancement = clampEnhancementLevel(level);
+    renderPlannerEnhancementControl();
+    draw();
   },
 };
 
