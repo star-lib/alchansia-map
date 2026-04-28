@@ -4513,7 +4513,7 @@ function renderPaletteGroup(target, items) {
 
   items.forEach((crop) => {
     const spec = CROP_TO_PLANT_ID[crop.id] ? PLANT_SPECS[CROP_TO_PLANT_ID[crop.id]] : null;
-    const displayYield = spec?.produce?.intervalMs
+    const displayYield = spec?.produce?.intervalMs && spec.produce.intervalMs > 1
       ? 3600000 / spec.produce.intervalMs
       : crop.hourlyYield;
     const button = document.createElement("button");
