@@ -460,6 +460,8 @@ const skillPointsView = document.getElementById("skill-points-view");
 const recipeTargetSelect = document.getElementById("recipe-target-select");
 const recipeTargetLevelInput = document.getElementById("recipe-target-level");
 const recipeTargetCountInput = document.getElementById("recipe-target-count");
+const recipeCauldronEnhancementInput = document.getElementById("recipe-cauldron-enhancement");
+const recipeEnhancementNote = document.getElementById("recipe-enhancement-note");
 const recipeControls = document.getElementById("recipe-controls");
 const recipeSummary = document.getElementById("recipe-summary");
 const recipeBreakdown = document.getElementById("recipe-breakdown");
@@ -513,9 +515,11 @@ const SKILL_POINT_STORAGE_KEY = "alchansia-skill-points-v1";
 const TIME_RELEVANT_SKILL_KEYS = {
   flameMastery: "불꽃 숙련",
 };
+const RECIPE_RELEVANT_SKILL_KEYS = {
+  wickMastery: "심지 숙련",
+};
 const SHARE_PARAM = "layout";
 const MAX_LAYOUT_SLOTS = 10;
-const ENHANCE_EXPECTED_COST = 3;
 const MILLIS_IN_SECOND = 1000;
 const MINUTE_MILLIS = 60000;
 const GROWTH_POTION_NAME = "성장포션";
@@ -984,6 +988,7 @@ function currentCalculatorPayload() {
     target: recipeTargetSelect.value,
     level: recipeTargetLevelInput.value,
     count: recipeTargetCountInput.value,
+    cauldronEnhancement: recipeCauldronEnhancementInput.value,
     selections: [...state.recipeSelections.entries()],
   };
 }
@@ -1005,6 +1010,7 @@ function loadCalculatorStateFromStorage() {
     const payload = JSON.parse(raw);
     recipeTargetLevelInput.value = String(Math.max(0, Number(payload.level) || 0));
     recipeTargetCountInput.value = String(Math.max(1, Number(payload.count) || 1));
+    recipeCauldronEnhancementInput.value = String(Math.max(0, Number(payload.cauldronEnhancement) || 0));
     state.recipeSelections = new Map(Array.isArray(payload.selections) ? payload.selections : []);
     if (typeof payload.target === "string") {
       recipeTargetSelect.dataset.pendingValue = payload.target;
@@ -1267,8 +1273,45 @@ function setActiveTab(tabId) {
   }
 }
 
-function enhancementExpectedCount(levelGap) {
-  return ENHANCE_EXPECTED_COST ** Math.max(levelGap, 0);
+function compoundedEffect(base, level, count) {
+  const factor = 1 - base * level;
+  let result = 1;
+  for (let index = 0; index < count; index += 1) {
+    result *= factor;
+  }
+  return 1 - result;
+}
+
+function enhancementSuccessRate(levelA, levelB, wickMasteryLevel, cauldronEnhancement) {
+  const difference = Math.abs(levelA - levelB);
+  const baseRate = 0.5 * (0.5 ** difference);
+  const wickBonus = wickMasteryLevel > 0
+    ? compoundedEffect(0.005, wickMasteryLevel, cauldronEnhancement + 1) * baseRate
+    : 0;
+  return Math.min(0.75, baseRate + wickBonus);
+}
+
+function recipeCauldronEnhancement() {
+  return Math.max(0, Number(recipeCauldronEnhancementInput?.value) || 0);
+}
+
+function activeWickMasteryLevel() {
+  return getSkillLevel(normalizeSkillName(RECIPE_RELEVANT_SKILL_KEYS.wickMastery));
+}
+
+function enhancementExpectedCount(
+  levelGap,
+  cauldronEnhancement = recipeCauldronEnhancement(),
+  wickMasteryLevel = activeWickMasteryLevel(),
+) {
+  const safeGap = Math.max(levelGap, 0);
+  if (safeGap === 0) {
+    return 1;
+  }
+
+  const successRate = enhancementSuccessRate(0, 0, wickMasteryLevel, cauldronEnhancement);
+  const expectedCopiesPerSuccess = (1 + successRate) / successRate;
+  return expectedCopiesPerSuccess ** safeGap;
 }
 
 function normalizeItemName(name) {
@@ -1850,8 +1893,13 @@ function renderRecipeCalculator() {
   recipeTargetSelect.value = selectedKey;
   const targetLevel = Math.max(0, Number(recipeTargetLevelInput.value) || 0);
   const targetCount = Math.max(1, Number(recipeTargetCountInput.value) || 1);
+  const cauldronEnhancement = recipeCauldronEnhancement();
+  const wickMasteryLevel = activeWickMasteryLevel();
+  const enhancementSuccess = enhancementSuccessRate(0, 0, wickMasteryLevel, cauldronEnhancement);
+  const expectedCopiesPerSuccess = (1 + enhancementSuccess) / enhancementSuccess;
   recipeTargetLevelInput.value = String(targetLevel);
   recipeTargetCountInput.value = String(targetCount);
+  recipeCauldronEnhancementInput.value = String(cauldronEnhancement);
   const recipeMap = recipeSourceMap();
   const recipe = recipeMap.get(selectedKey);
 
@@ -1860,6 +1908,10 @@ function renderRecipeCalculator() {
     recipeControls.innerHTML = "";
     recipeBreakdown.innerHTML = "";
     return;
+  }
+
+  if (recipeEnhancementNote) {
+    recipeEnhancementNote.textContent = `심지 숙련 Lv ${wickMasteryLevel}, 솥 강화 +${cauldronEnhancement} 기준으로 계산 중입니다. 같은 강화끼리 합칠 때 성공률 ${formatNumber(enhancementSuccess * 100, 1)}%, 1단계당 기대 소모 ${formatNumber(expectedCopiesPerSuccess, 3)}개`;
   }
 
   recipeControls.innerHTML = "";
@@ -2540,12 +2592,7 @@ function flameMasteryReduction(flameMastery, cauldronEnhancement) {
 }
 
 function compoundedReduction(base, level, count) {
-  const factor = 1 - base * level;
-  let result = 1;
-  for (let index = 0; index < count; index += 1) {
-    result *= factor;
-  }
-  return 1 - result;
+  return compoundedEffect(base, level, count);
 }
 
 function formatWorkDuration(durationMs) {
@@ -2775,7 +2822,7 @@ function skillPointTotals() {
 }
 
 function requiredSkillLevel() {
-  return Math.max(1, skillPointTotals());
+  return Math.max(1, skillPointTotals() + 1);
 }
 
 function skillCategoryMeta(category) {
@@ -3250,6 +3297,7 @@ function updateSkillLevel(skillKey, delta) {
   }
   saveSkillTreeToStorage();
   renderSkillTree();
+  renderRecipeCalculator();
   renderMaterialCalculator();
   updateTimeCalculator();
 }
@@ -3258,6 +3306,7 @@ function resetSkillLevels() {
   state.skillLevels = new Map();
   saveSkillTreeToStorage();
   renderSkillTree();
+  renderRecipeCalculator();
   renderMaterialCalculator();
   updateTimeCalculator();
 }
@@ -3401,6 +3450,7 @@ async function loadSkills() {
       state.activeSkillCategory = skillCategories()[0] ?? "";
     }
     renderSkillTree();
+    renderRecipeCalculator();
   } catch (error) {
     if (skillTreeSummary) {
       skillTreeSummary.innerHTML = `<p>skills.csv를 불러오지 못했습니다.</p>`;
@@ -4584,6 +4634,10 @@ recipeTargetLevelInput.addEventListener("input", () => {
 });
 
 recipeTargetCountInput.addEventListener("input", () => {
+  renderRecipeCalculator();
+});
+
+recipeCauldronEnhancementInput.addEventListener("input", () => {
   renderRecipeCalculator();
 });
 
