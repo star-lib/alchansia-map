@@ -1883,7 +1883,7 @@ body {
   .page-shell {
     width: min(100vw - 20px, 100%);
     padding-top: 24px;
-    padding-bottom: calc(330px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(40px + env(safe-area-inset-bottom, 0px));
   }
 
   .planner-card {
@@ -1914,13 +1914,9 @@ body {
   }
 
   .palette-dock {
-    position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
-    z-index: 30;
+    position: static;
     gap: 10px;
-    margin: 0;
+    margin: 12px 0 14px;
   }
 
   .palette-section {
@@ -1990,7 +1986,7 @@ body {
 
   .stats-panel {
     padding: 14px;
-    margin-bottom: calc(290px + env(safe-area-inset-bottom, 0px));
+    margin-bottom: 0;
   }
 
   .slot-row {

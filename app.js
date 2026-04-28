@@ -1610,7 +1610,7 @@ function syncTimeCalculatorSkillsFromTree() {
 async function loadTimeGameIndex() {
   const response = await fetch("./alcanthia_time_data.json", { cache: "no-store" });
   if (!response.ok) {
-    throw new Error("?? ?? ??? ??? ???? ?????.");
+    throw new Error("원본 게임 데이터 파일을 불러오지 못했습니다.");
   }
   return response.json();
 }
@@ -2376,7 +2376,7 @@ function loadPotionRecipes() {
 }
 
 async function initializeTimeCalculatorData() {
-  setTimeStatus("loading", "???? ???? ???? ????.");
+  setTimeStatus("loading", "원본 게임 레시피와 시간 데이터를 불러오는 중입니다.");
 
   try {
     const data = await loadTimeGameIndex();
@@ -2414,7 +2414,7 @@ async function initializeTimeCalculatorData() {
     );
 
     if (!state.timedItems.length || !state.timeBrewingRecipes.length || !state.timeCraftRecipes.length) {
-      throw new Error("?? ?? ???? ?? ????.");
+      throw new Error("원본 게임 데이터 구성이 비어 있습니다.");
     }
 
     state.cauldronRecipes = buildCauldronRecipesFromTimeData();
@@ -2469,7 +2469,7 @@ async function initializeTimeCalculatorData() {
     syncTimeCalculatorInputs();
     renderTimeDurationTable();
     renderRecipeCalculator();
-    setTimeStatus("error", `?? ?? ???? ???? ?????: ${error.message}`);
+    setTimeStatus("error", `원본 앱 레시피를 불러오지 못했습니다: ${error.message}`);
   }
 }
 
@@ -3758,6 +3758,12 @@ function buildPlannerAnalysis() {
   const skillLevels = plannerSkillLevels();
   const cells = new Map();
   const cropCounts = new Map(CROPS.map((crop) => [crop.id, 0]));
+  const cardinalDeltas = [
+    { col: -1, row: -1 },
+    { col: 1, row: -1 },
+    { col: -1, row: 1 },
+    { col: 1, row: 1 },
+  ];
 
   for (const key of state.cells) {
     const { col, row } = parseKey(key);
@@ -3795,6 +3801,7 @@ function buildPlannerAnalysis() {
       produceAccum: 0,
       totalProduced: 0,
       lastUpdate: startMs,
+      lastPollinateAt: undefined,
       conditions: plantId === "poison_flower" ? ["poison_immune"] : [],
     };
   }
@@ -4001,6 +4008,63 @@ function buildPlannerAnalysis() {
       ) {
         cell.plant.conditions.push("poisoned");
       }
+    }
+
+    const pendingWindSpawns = [];
+    for (const cell of cells.values()) {
+      if (!isMature(cell, currentMs) || cell.plant.id !== "wind_blossom") {
+        continue;
+      }
+
+      const pollinationInterval = PLANT_SPECS.wind_blossom.produce?.intervalMs ?? Number.POSITIVE_INFINITY;
+      if (currentMs - (cell.plant.lastPollinateAt ?? 0) < pollinationInterval) {
+        continue;
+      }
+
+      cell.plant.lastPollinateAt = currentMs;
+      for (const delta of cardinalDeltas) {
+        const sourceKey = cellKey(cell.col + delta.col, cell.row + delta.row);
+        const sourceCell = cells.get(sourceKey);
+        const sourcePlant = sourceCell?.plant;
+        if (!sourcePlant || sourcePlant.health <= 0 || sourcePlant.growStartedAt == null || sourcePlant.id === "wind_blossom") {
+          continue;
+        }
+
+        const targetKey = cellKey(cell.col + delta.col * 2, cell.row + delta.row * 2);
+        const targetCell = cells.get(targetKey);
+        if (!targetCell || targetCell.plant) {
+          continue;
+        }
+
+        pendingWindSpawns.push({
+          targetKey,
+          cropId: sourcePlant.cropId,
+          plantId: sourcePlant.id,
+          enhancement: 0,
+        });
+      }
+    }
+
+    for (const spawn of pendingWindSpawns) {
+      const targetCell = cells.get(spawn.targetKey);
+      const spec = PLANT_SPECS[spawn.plantId];
+      if (!targetCell || targetCell.plant || !spec) {
+        continue;
+      }
+
+      targetCell.plant = {
+        cropId: spawn.cropId,
+        id: spawn.plantId,
+        enhancement: spawn.enhancement,
+        health: 100,
+        growStartedAt: currentMs,
+        wateredAt: null,
+        produceAccum: 0,
+        totalProduced: 0,
+        lastUpdate: currentMs,
+        lastPollinateAt: undefined,
+        conditions: spawn.plantId === "poison_flower" ? ["poison_immune"] : [],
+      };
     }
   }
 
