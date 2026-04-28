@@ -3928,8 +3928,7 @@ function buildPlannerAnalysis() {
 
       const plant = cell.plant;
       if (plant.id === "dew_root") {
-        const veinBonus = skillLevels.veinReading > 0 ? plant.enhancement : 0;
-        const range = skillLevels.rootDominion + plant.enhancement + veinBonus;
+        const range = skillLevels.rootDominion + (skillLevels.veinReading > 0 ? plant.enhancement : 0);
         for (const targetKey of rangeKeys(cell, range)) {
           const target = cells.get(targetKey);
           if (!target || target.conditions.includes("arid")) {
@@ -3947,8 +3946,7 @@ function buildPlannerAnalysis() {
         if (!cell.conditions.includes("sunlit")) {
           cell.conditions.push("sunlit");
         }
-        const veinBonus = skillLevels.veinReading > 0 ? plant.enhancement : 0;
-        const range = plant.enhancement + veinBonus;
+        const range = skillLevels.veinReading > 0 ? plant.enhancement : 0;
         for (const targetKey of (range > 0 ? rangeKeys(cell, range) : orthogonalNeighborKeys(cell))) {
           const target = cells.get(targetKey);
           if (target && !target.conditions.includes("sunlit")) {
@@ -4060,8 +4058,7 @@ function buildPlannerAnalysis() {
         continue;
       }
 
-      const veinBonus = skillLevels.veinReading > 0 ? cell.plant.enhancement : 0;
-      const range = cell.plant.enhancement + veinBonus;
+      const range = skillLevels.veinReading > 0 ? cell.plant.enhancement : 0;
       for (const targetKey of rangeKeys(cell, range)) {
         const target = cells.get(targetKey);
         if (target && !target.conditions.includes("poisonous")) {
