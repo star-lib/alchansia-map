@@ -224,6 +224,19 @@ const TOOLS = [
     ],
     hourlyYield: 0,
   },
+  {
+    id: "poison-tile",
+    name: "땅 중독",
+    short: "중독",
+    color: "#8f63c8",
+    accentColor: "#d1b0ff",
+    summary: "선택한 땅을 중독 상태로 고정",
+    details: [
+      "선택한 땅에 중독 속성을 추가하거나 제거합니다.",
+      "중독된 땅 위 식물은 독 면역이 아니면 시뮬레이션 중 죽습니다.",
+    ],
+    hourlyYield: 0,
+  },
 ];
 
 const cropById = new Map([...CROPS, ...TOOLS].map((crop) => [crop.id, crop]));
@@ -720,6 +733,7 @@ const state = {
   addSlots: [],
   plants: new Map(),
   desertTiles: new Set(),
+  poisonTiles: new Set(),
   layoutSlots: Array.from({ length: MAX_LAYOUT_SLOTS }, () => null),
   cauldronSlots: Array.from({ length: MAX_LAYOUT_SLOTS }, () => null),
   activeSlotMode: "layout",
@@ -877,6 +891,17 @@ function selectedCropPlacement() {
   };
 }
 
+function basePlannerCellConditions(key) {
+  const conditions = [];
+  if (state.desertTiles.has(key)) {
+    conditions.push("arid");
+  }
+  if (state.poisonTiles.has(key)) {
+    conditions.push("poisonous");
+  }
+  return conditions;
+}
+
 function logicalPoint(col, row) {
   return {
     x: (col + row) / 2,
@@ -891,6 +916,7 @@ function currentLayoutPayload() {
       .map(([key, placement]) => [key, normalizePlantPlacement(placement)])
       .filter((entry) => entry[1]),
     desertTiles: [...state.desertTiles],
+    poisonTiles: [...state.poisonTiles],
     selectedCropId: state.selectedCropId,
     selectedCropEnhancement: clampEnhancementLevel(state.selectedCropEnhancement),
   };
@@ -919,10 +945,16 @@ function applyLayoutPayload(payload) {
       ? payload.desertTiles.filter((value) => typeof value === "string")
       : [],
   );
+  const poisonTiles = new Set(
+    Array.isArray(payload?.poisonTiles)
+      ? payload.poisonTiles.filter((value) => typeof value === "string")
+      : [],
+  );
 
   state.cells = cells.size ? cells : createStartingCells();
   state.plants = new Map([...plants].filter(([key]) => state.cells.has(key)));
   state.desertTiles = new Set([...desertTiles].filter((key) => state.cells.has(key)));
+  state.poisonTiles = new Set([...poisonTiles].filter((key) => state.cells.has(key)));
 
   if (cropById.has(payload?.selectedCropId)) {
     state.selectedCropId = payload.selectedCropId;
@@ -3773,6 +3805,7 @@ function plannerSimulationCacheKey() {
     cells: [...state.cells].sort(),
     plants: [...state.plants.entries()].sort((a, b) => a[0].localeCompare(b[0])),
     desertTiles: [...state.desertTiles].sort(),
+    poisonTiles: [...state.poisonTiles].sort(),
     boostPotionActive: state.boostPotionActive,
     skillLevels: plannerSkillLevels(),
   });
@@ -3871,7 +3904,7 @@ function buildPlannerAnalysis() {
       row,
       logicalX: point.x,
       logicalY: point.y,
-      conditions: state.desertTiles.has(key) ? ["arid"] : [],
+      conditions: basePlannerCellConditions(key),
       plant: null,
     });
   }
@@ -3946,6 +3979,9 @@ function buildPlannerAnalysis() {
     for (const cell of cells.values()) {
       cell.conditions = cell.conditions.filter((condition) =>
         condition !== "humid" && condition !== "poisonous" && condition !== "sunlit");
+      if (state.poisonTiles.has(cell.key) && !cell.conditions.includes("poisonous")) {
+        cell.conditions.push("poisonous");
+      }
     }
 
     for (const cell of cells.values()) {
@@ -4336,7 +4372,7 @@ function buildEffectMap() {
       row,
       logicalX: point.x,
       logicalY: point.y,
-      conditions: state.desertTiles.has(keyName) ? ["arid"] : [],
+      conditions: basePlannerCellConditions(keyName),
       plant: null,
     });
   }
@@ -5389,6 +5425,7 @@ function applyClick(point) {
     state.cells.delete(cell.key);
     state.plants.delete(cell.key);
     state.desertTiles.delete(cell.key);
+    state.poisonTiles.delete(cell.key);
     if (state.cells.size === 0) {
       state.cells = createStartingCells();
     }
@@ -5397,6 +5434,12 @@ function applyClick(point) {
       state.desertTiles.delete(cell.key);
     } else {
       state.desertTiles.add(cell.key);
+    }
+  } else if (state.selectedCropId === "poison-tile") {
+    if (state.poisonTiles.has(cell.key)) {
+      state.poisonTiles.delete(cell.key);
+    } else {
+      state.poisonTiles.add(cell.key);
     }
   } else {
     const existingPlacement = normalizePlantPlacement(state.plants.get(cell.key));
@@ -5579,6 +5622,7 @@ canvas.addEventListener("contextmenu", (event) => {
   state.cells.delete(cell.key);
   state.plants.delete(cell.key);
   state.desertTiles.delete(cell.key);
+  state.poisonTiles.delete(cell.key);
 
   for (const [key] of state.plants) {
     if (!state.cells.has(key)) {
@@ -5829,6 +5873,7 @@ resetButton.addEventListener("click", () => {
   state.cells = createStartingCells();
   state.plants.clear();
   state.desertTiles.clear();
+  state.poisonTiles.clear();
   state.hover = null;
   state.hoverPoint = null;
   saveLayoutToStorage();
@@ -5857,6 +5902,7 @@ window.render_game_to_text = () =>
       })
       .filter(Boolean),
     desertTiles: [...state.desertTiles].map(parseKey),
+    poisonTiles: [...state.poisonTiles].map(parseKey),
     expandableSlots: state.addSlots,
     skillCategory: state.activeSkillCategory,
     skillPointsSpent: skillPointTotals(),
@@ -5884,6 +5930,7 @@ window.__planner_debug = {
       })
       .filter(Boolean),
   getDesertTiles: () => [...state.desertTiles].map(parseKey),
+  getPoisonTiles: () => [...state.poisonTiles].map(parseKey),
   gridToScreen: (col, row) => {
     const center = gridToPixel(col, row);
     return worldToScreen(center.x, center.y);

@@ -201,8 +201,8 @@ async function runDesktop(results, browser) {
     }
   });
 
-  await runScenario(results, browser, mode, "planner tool palette has three tools", async (page) => {
-    assert(await page.locator("#tool-palette .crop-button").count() === 3, "tool palette count mismatch");
+  await runScenario(results, browser, mode, "planner tool palette has four tools", async (page) => {
+    assert(await page.locator("#tool-palette .crop-button").count() === 4, "tool palette count mismatch");
   });
 
   await runScenario(results, browser, mode, "planner crop palette has twelve crops", async (page) => {
@@ -482,8 +482,8 @@ async function runMobile(results, browser) {
     assert(!intersects(actionsBox, paletteBox), "planner actions overlap the palette dock on mobile");
   });
 
-  await runScenario(results, browser, mode, "mobile planner tool palette still shows three tools", async (page) => {
-    assert(await page.locator("#tool-palette .crop-button").count() === 3, "mobile tool palette count mismatch");
+  await runScenario(results, browser, mode, "mobile planner tool palette still shows four tools", async (page) => {
+    assert(await page.locator("#tool-palette .crop-button").count() === 4, "mobile tool palette count mismatch");
   });
 
   await runScenario(results, browser, mode, "mobile crop palette is horizontally scrollable", async (page) => {
