@@ -237,6 +237,20 @@ const TOOLS = [
     ],
     hourlyYield: 0,
   },
+  {
+    id: "scarecrow",
+    name: "허수아비",
+    short: "허",
+    color: "#8b5a2b",
+    accentColor: "#d9ad63",
+    iconPath: "./alcanthia_assets/general/witch_scarecrow.png",
+    summary: "인접 4칸 자동 수확 방지",
+    details: [
+      "배치한 칸의 상하좌우 인접 4칸 작물은 자동 수확되지 않습니다.",
+      "대각선 방향은 영향받지 않습니다.",
+    ],
+    hourlyYield: 0,
+  },
 ];
 
 const cropById = new Map([...CROPS, ...TOOLS].map((crop) => [crop.id, crop]));
@@ -749,6 +763,7 @@ const state = {
   plants: new Map(),
   desertTiles: new Set(),
   toxicTiles: new Set(),
+  scarecrowTiles: new Set(),
   layoutSlots: Array.from({ length: MAX_LAYOUT_SLOTS }, () => null),
   cauldronSlots: Array.from({ length: MAX_LAYOUT_SLOTS }, () => null),
   activeSlotMode: "layout",
@@ -932,6 +947,7 @@ function currentLayoutPayload() {
       .filter((entry) => entry[1]),
     desertTiles: [...state.desertTiles],
     toxicTiles: [...state.toxicTiles],
+    scarecrowTiles: [...state.scarecrowTiles],
     selectedCropId: state.selectedCropId,
     selectedCropEnhancement: clampEnhancementLevel(state.selectedCropEnhancement),
   };
@@ -968,11 +984,17 @@ function applyLayoutPayload(payload) {
   const toxicTiles = new Set(
     toxicTileSource.filter((value) => typeof value === "string"),
   );
+  const scarecrowTiles = new Set(
+    Array.isArray(payload?.scarecrowTiles)
+      ? payload.scarecrowTiles.filter((value) => typeof value === "string")
+      : [],
+  );
 
   state.cells = cells.size ? cells : createStartingCells();
   state.plants = new Map([...plants].filter(([key]) => state.cells.has(key)));
   state.desertTiles = new Set([...desertTiles].filter((key) => state.cells.has(key)));
   state.toxicTiles = new Set([...toxicTiles].filter((key) => state.cells.has(key)));
+  state.scarecrowTiles = new Set([...scarecrowTiles].filter((key) => state.cells.has(key)));
 
   if (cropById.has(payload?.selectedCropId)) {
     state.selectedCropId = payload.selectedCropId;
@@ -3824,6 +3846,7 @@ function plannerSimulationCacheKey() {
     plants: [...state.plants.entries()].sort((a, b) => a[0].localeCompare(b[0])),
     desertTiles: [...state.desertTiles].sort(),
     toxicTiles: [...state.toxicTiles].sort(),
+    scarecrowTiles: [...state.scarecrowTiles].sort(),
     boostPotionActive: state.boostPotionActive,
     skillLevels: plannerSkillLevels(),
   });
@@ -3989,6 +4012,8 @@ function buildPlannerAnalysis() {
     getDiagonalNeighbors(cell.col, cell.row)
       .map(({ col, row }) => cellKey(col, row))
       .filter((key) => cells.has(key));
+  const hasAdjacentScarecrow = (cell) =>
+    orthogonalNeighborKeys(cell).some((neighborKey) => state.scarecrowTiles.has(neighborKey));
 
   const rangeKeys = (cell, range) => {
     if (range >= 1) {
@@ -4119,6 +4144,10 @@ function buildPlannerAnalysis() {
         + plannerGrowthTime(plant.id, cell.conditions, skillLevels.soilMastery, plant.enhancement);
 
       if (remainingCapacity > 0 && currentMs >= readyAt && !plant.conditions.includes("poisoned")) {
+        if (hasAdjacentScarecrow(cell)) {
+          plant.lastUpdate = currentMs;
+          continue;
+        }
         const sameNeighborCount = orthogonalNeighborKeys(cell)
           .map((key) => cells.get(key)?.plant)
           .filter((neighbor) => neighbor && neighbor.health > 0 && neighbor.id === plant.id)
@@ -4277,6 +4306,9 @@ function buildPlannerAnalysis() {
     if (remainingCapacity <= 0) {
       continue;
     }
+    if (hasAdjacentScarecrow(cell)) {
+      continue;
+    }
 
     const sameNeighborCount = orthogonalNeighborKeys(cell)
       .map((key) => cells.get(key)?.plant)
@@ -4315,6 +4347,8 @@ function buildPlannerAnalysis() {
       toxic: cell.conditions.includes("toxic") ? 1 : 0,
       poisoned: cell.conditions.includes("poisonous") || cell.plant?.conditions.includes("poisoned") ? 1 : 0,
       sunBuff: cell.conditions.includes("sunlit") ? 1 : 0,
+      scarecrow: state.scarecrowTiles.has(cell.key) ? 1 : 0,
+      scarecrowProtected: 0,
       dead: Boolean(cell.plant && cell.plant.health <= 0),
       windAnchor: 0,
       windSource: 0,
@@ -4345,6 +4379,14 @@ function buildPlannerAnalysis() {
       && cell.plant.growStartedAt != null
       && cell.plant.id !== "wind_blossom",
     );
+
+  for (const cell of cells.values()) {
+    if (state.scarecrowTiles.has(cell.key)) {
+      for (const targetKey of orthogonalNeighborKeys(cell)) {
+        effects.get(targetKey).scarecrowProtected = 1;
+      }
+    }
+  }
 
   for (const cell of cells.values()) {
     if (!isSnapshotMature(cell) || cell.plant.id !== "wind_blossom") {
@@ -4465,6 +4507,8 @@ function buildEffectMap() {
       toxic: cell.conditions.includes("toxic") ? 1 : 0,
       poisoned: 0,
       sunBuff: 0,
+      scarecrow: state.scarecrowTiles.has(cell.key) ? 1 : 0,
+      scarecrowProtected: 0,
       dead: false,
       windAnchor: 0,
       windSource: 0,
@@ -4472,6 +4516,14 @@ function buildEffectMap() {
       windPreviewPlants: [],
       windSpawned: false,
     });
+  }
+
+  for (const cell of cells.values()) {
+    if (state.scarecrowTiles.has(cell.key)) {
+      for (const targetKey of orthogonalNeighborKeys(cell)) {
+        effects.get(targetKey).scarecrowProtected = 1;
+      }
+    }
   }
 
   for (const cell of cells.values()) {
@@ -4669,6 +4721,7 @@ function drawEffectOverlay(points, effect) {
       dash: [6, 5],
     });
   }
+
 }
 
 function drawStripedDiamond(points, options) {
@@ -4797,7 +4850,68 @@ function drawWindPreview(col, row, effect) {
   });
 }
 
-function drawPlant(col, row, crop, enhancement, effect, isHovered) {
+function drawScarecrow(col, row, effect, isHovered, deferredTextDraws = []) {
+  const center = gridToPixel(col, row);
+  const alpha = effect.scarecrowProtected > 0 ? 0.98 : 0.92;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = isHovered ? "#fff7e6" : "#5e3412";
+  ctx.lineWidth = isHovered ? 3 : 2.2;
+  ctx.lineCap = "round";
+
+  ctx.beginPath();
+  ctx.moveTo(center.x, center.y - 20);
+  ctx.lineTo(center.x, center.y + 18);
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(center.x - 14, center.y - 2);
+  ctx.lineTo(center.x + 14, center.y - 2);
+  ctx.stroke();
+
+  ctx.fillStyle = "#b97834";
+  ctx.beginPath();
+  ctx.roundRect(center.x - 11, center.y - 20, 22, 18, 6);
+  ctx.fill();
+
+  ctx.fillStyle = "#e6c16f";
+  ctx.beginPath();
+  ctx.moveTo(center.x - 15, center.y - 22);
+  ctx.lineTo(center.x, center.y - 31);
+  ctx.lineTo(center.x + 15, center.y - 22);
+  ctx.closePath();
+  ctx.fill();
+
+  ctx.fillStyle = "#3b2410";
+  ctx.beginPath();
+  ctx.arc(center.x - 4, center.y - 12, 1.6, 0, Math.PI * 2);
+  ctx.arc(center.x + 4, center.y - 12, 1.6, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.strokeStyle = "#3b2410";
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(center.x - 4, center.y - 7);
+  ctx.lineTo(center.x + 5, center.y - 7);
+  ctx.stroke();
+
+  ctx.restore();
+
+  deferredTextDraws.push(() => {
+    drawOverlayLabel({
+      text: "허",
+      x: center.x,
+      y: center.y + 25,
+      font: '700 10px "Malgun Gothic", sans-serif',
+      fillStyle: "#7e4c1f",
+      strokeStyle: "rgba(255, 246, 223, 0.92)",
+      lineWidth: 2.4,
+    });
+  });
+}
+
+function drawPlant(col, row, crop, enhancement, effect, isHovered, deferredTextDraws = []) {
   const center = gridToPixel(col, row);
   const radius = CELL_SIZE * 0.4;
   const cropImage = getPlannerCropImage(crop.id);
@@ -4843,13 +4957,17 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered) {
     );
     ctx.restore();
   } else {
-    ctx.save();
-    ctx.fillStyle = effect.dead ? "rgba(59,40,22,0.92)" : "rgba(44, 30, 16, 0.92)";
-    ctx.font = `700 ${Math.round(CELL_SIZE * 0.44)}px "Malgun Gothic", sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(crop.short, center.x, center.y + 1);
-    ctx.restore();
+    deferredTextDraws.push(() => {
+      drawOverlayLabel({
+        text: crop.short,
+        x: center.x,
+        y: center.y + 1,
+        font: `700 ${Math.round(CELL_SIZE * 0.44)}px "Malgun Gothic", sans-serif`,
+        fillStyle: effect.dead ? "rgba(59,40,22,0.92)" : "rgba(44, 30, 16, 0.96)",
+        strokeStyle: "rgba(255, 250, 242, 0.95)",
+        lineWidth: 3.4,
+      });
+    });
   }
 
   if (effect.dead) {
@@ -4871,12 +4989,41 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered) {
     ctx.beginPath();
     ctx.roundRect(center.x - 16, center.y - 26, 18, 14, 6);
     ctx.fill();
-    ctx.fillStyle = "#f1fffd";
-    ctx.font = '700 9px "Segoe UI", sans-serif';
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("바", center.x - 7, center.y - 18);
     ctx.restore();
+    deferredTextDraws.push(() => {
+      drawOverlayLabel({
+        text: "바",
+        x: center.x - 7,
+        y: center.y - 18,
+        font: '700 9px "Segoe UI", sans-serif',
+        fillStyle: "#f1fffd",
+        strokeStyle: "rgba(18, 93, 86, 0.96)",
+        lineWidth: 2.6,
+      });
+    });
+  }
+
+  if (effect.scarecrowProtected > 0) {
+    ctx.save();
+    ctx.fillStyle = "rgba(126, 76, 31, 0.96)";
+    ctx.beginPath();
+    ctx.roundRect(center.x - 11, center.y + 8, 22, 16, 6);
+    ctx.fill();
+    ctx.restore();
+    deferredTextDraws.push(() => {
+      drawOverlayLabel({
+        text: "항마",
+        x: center.x,
+        y: center.y + 16,
+        font: '700 10px "Malgun Gothic", sans-serif',
+        fillStyle: "#fff6df",
+        strokeStyle: "rgba(76, 40, 12, 0.98)",
+        lineWidth: 3,
+      });
+    });
+    deferredTextDraws.push(() => {
+      drawShieldBadge(center.x, center.y + 16);
+    });
   }
 
   if (effect.windSource > 0) {
@@ -4885,12 +5032,18 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered) {
     ctx.beginPath();
     ctx.roundRect(center.x + 1, center.y - 26, 18, 14, 6);
     ctx.fill();
-    ctx.fillStyle = "#154842";
-    ctx.font = '700 9px "Segoe UI", sans-serif';
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("복", center.x + 10, center.y - 18);
     ctx.restore();
+    deferredTextDraws.push(() => {
+      drawOverlayLabel({
+        text: "복",
+        x: center.x + 10,
+        y: center.y - 18,
+        font: '700 9px "Segoe UI", sans-serif',
+        fillStyle: "#154842",
+        strokeStyle: "rgba(240, 255, 251, 0.96)",
+        lineWidth: 2.6,
+      });
+    });
   }
 
   if (enhancement > 0 || effect.windSpawned) {
@@ -4899,12 +5052,18 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered) {
     ctx.beginPath();
     ctx.roundRect(center.x + 6, center.y - 24, 22, 16, 6);
     ctx.fill();
-    ctx.fillStyle = effect.windSpawned ? "#f4fffb" : "#fff6df";
-    ctx.font = '700 10px "Segoe UI", sans-serif';
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(`+${enhancement}`, center.x + 17, center.y - 16);
     ctx.restore();
+    deferredTextDraws.push(() => {
+      drawOverlayLabel({
+        text: `+${enhancement}`,
+        x: center.x + 17,
+        y: center.y - 16,
+        font: '700 10px "Segoe UI", sans-serif',
+        fillStyle: effect.windSpawned ? "#f4fffb" : "#fff6df",
+        strokeStyle: effect.windSpawned ? "rgba(16, 79, 72, 0.96)" : "rgba(44, 24, 12, 0.96)",
+        lineWidth: 2.8,
+      });
+    });
   }
 
   if (effect.windSpawned) {
@@ -4922,12 +5081,18 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered) {
     ctx.beginPath();
     ctx.roundRect(center.x - 16, center.y + 12, 32, 16, 7);
     ctx.fill();
-    ctx.fillStyle = "#f5fff8";
-    ctx.font = '700 10px "Segoe UI Symbol", "Malgun Gothic", sans-serif';
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("✦ 바람", center.x, center.y + 20);
     ctx.restore();
+    deferredTextDraws.push(() => {
+      drawOverlayLabel({
+        text: "✦ 바람",
+        x: center.x,
+        y: center.y + 20,
+        font: '700 10px "Segoe UI Symbol", "Malgun Gothic", sans-serif',
+        fillStyle: "#f5fff8",
+        strokeStyle: "rgba(16, 79, 72, 0.96)",
+        lineWidth: 3,
+      });
+    });
   }
 
   if (effect.watered > 0 || effect.toxic > 0 || effect.poisoned > 0 || effect.sunBuff > 0) {
@@ -4945,12 +5110,18 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered) {
       ctx.beginPath();
       ctx.roundRect(x - 7, y - 7, 16, 14, 5);
       ctx.fill();
-      ctx.fillStyle = "#fffaf2";
-      ctx.font = '700 9px "Segoe UI", sans-serif';
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText(marker.text, x + 1, y + 1);
       ctx.restore();
+      deferredTextDraws.push(() => {
+        drawOverlayLabel({
+          text: marker.text,
+          x: x + 1,
+          y: y + 1,
+          font: '700 9px "Segoe UI", sans-serif',
+          fillStyle: "#fffaf2",
+          strokeStyle: "rgba(44, 24, 12, 0.96)",
+          lineWidth: 2.4,
+        });
+      });
     });
   }
 }
@@ -4984,6 +5155,62 @@ function paintCanvasBackground(targetCtx, width, height) {
   targetCtx.restore();
 }
 
+function drawOverlayLabel({
+  text,
+  x,
+  y,
+  font = '700 10px "Malgun Gothic", sans-serif',
+  fillStyle = "#fffaf2",
+  strokeStyle = "rgba(44, 24, 12, 0.92)",
+  lineWidth = 3,
+}) {
+  ctx.save();
+  ctx.font = font;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = strokeStyle;
+  ctx.lineWidth = lineWidth;
+  ctx.strokeText(text, x, y);
+  ctx.fillStyle = fillStyle;
+  ctx.fillText(text, x, y);
+  ctx.restore();
+}
+
+function drawShieldBadge(x, y) {
+  ctx.save();
+  ctx.translate(x, y);
+
+  ctx.beginPath();
+  ctx.roundRect(-11, -8, 22, 16, 6);
+  ctx.fillStyle = "rgba(126, 76, 31, 0.96)";
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(0, -4.5);
+  ctx.lineTo(5.5, -2.4);
+  ctx.lineTo(5, 2.5);
+  ctx.quadraticCurveTo(4.3, 6.4, 0, 8.8);
+  ctx.quadraticCurveTo(-4.3, 6.4, -5, 2.5);
+  ctx.lineTo(-5.5, -2.4);
+  ctx.closePath();
+  ctx.fillStyle = "#fff6df";
+  ctx.fill();
+
+  ctx.beginPath();
+  ctx.moveTo(0, -2.8);
+  ctx.lineTo(3.1, -1.7);
+  ctx.lineTo(2.8, 1.5);
+  ctx.quadraticCurveTo(2.3, 4.2, 0, 5.7);
+  ctx.quadraticCurveTo(-2.3, 4.2, -2.8, 1.5);
+  ctx.lineTo(-3.1, -1.7);
+  ctx.closePath();
+  ctx.fillStyle = "rgba(126, 76, 31, 0.96)";
+  ctx.fill();
+
+  ctx.restore();
+}
+
 function draw(options = {}) {
   const {
     includeAddSlots = true,
@@ -4992,6 +5219,7 @@ function draw(options = {}) {
 
   state.addSlots = collectAddSlots();
   const effects = buildEffectMap();
+  const deferredTextDraws = [];
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   if (includeCanvasBackground) {
@@ -5009,6 +5237,7 @@ function draw(options = {}) {
     const effect = effects.get(key);
     const isHovered = getHoveredKey("cell") === key;
     const isDesert = state.desertTiles.has(key);
+    const hasScarecrow = state.scarecrowTiles.has(key);
 
     drawDiamond(points, {
       fill: isHovered ? "rgba(218, 180, 113, 0.98)" : "rgba(202, 161, 100, 0.96)",
@@ -5051,7 +5280,10 @@ function draw(options = {}) {
         placement.enhancement,
         effect,
         isHovered,
+        deferredTextDraws,
       );
+    } else if (hasScarecrow) {
+      drawScarecrow(col, row, effect, isHovered, deferredTextDraws);
     } else if (effect.windPreviewPlants?.length) {
       drawWindPreview(col, row, effect);
     }
@@ -5081,6 +5313,7 @@ function draw(options = {}) {
     });
   }
 
+  deferredTextDraws.forEach((drawText) => drawText());
   ctx.restore();
 
   const plantedCount = state.plants.size;
@@ -5483,6 +5716,7 @@ function applyClick(point) {
     state.plants.delete(cell.key);
     state.desertTiles.delete(cell.key);
     state.toxicTiles.delete(cell.key);
+    state.scarecrowTiles.delete(cell.key);
     if (state.cells.size === 0) {
       state.cells = createStartingCells();
     }
@@ -5498,12 +5732,20 @@ function applyClick(point) {
     } else {
       state.toxicTiles.add(cell.key);
     }
+  } else if (state.selectedCropId === "scarecrow") {
+    if (state.scarecrowTiles.has(cell.key)) {
+      state.scarecrowTiles.delete(cell.key);
+    } else {
+      state.plants.delete(cell.key);
+      state.scarecrowTiles.add(cell.key);
+    }
   } else {
     const existingPlacement = normalizePlantPlacement(state.plants.get(cell.key));
     const nextPlacement = selectedCropPlacement();
     if (placementsMatch(existingPlacement, nextPlacement)) {
       state.plants.delete(cell.key);
     } else {
+      state.scarecrowTiles.delete(cell.key);
       state.plants.set(cell.key, nextPlacement);
     }
   }
@@ -5931,6 +6173,7 @@ resetButton.addEventListener("click", () => {
   state.plants.clear();
   state.desertTiles.clear();
   state.toxicTiles.clear();
+  state.scarecrowTiles.clear();
   state.hover = null;
   state.hoverPoint = null;
   saveLayoutToStorage();
@@ -5961,6 +6204,7 @@ window.render_game_to_text = () =>
     desertTiles: [...state.desertTiles].map(parseKey),
     toxicTiles: [...state.toxicTiles].map(parseKey),
     poisonTiles: [...state.toxicTiles].map(parseKey),
+    scarecrowTiles: [...state.scarecrowTiles].map(parseKey),
     expandableSlots: state.addSlots,
     skillCategory: state.activeSkillCategory,
     skillPointsSpent: skillPointTotals(),
@@ -5990,6 +6234,7 @@ window.__planner_debug = {
   getDesertTiles: () => [...state.desertTiles].map(parseKey),
   getToxicTiles: () => [...state.toxicTiles].map(parseKey),
   getPoisonTiles: () => [...state.toxicTiles].map(parseKey),
+  getScarecrowTiles: () => [...state.scarecrowTiles].map(parseKey),
   gridToScreen: (col, row) => {
     const center = gridToPixel(col, row);
     return worldToScreen(center.x, center.y);
