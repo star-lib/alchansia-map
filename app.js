@@ -537,6 +537,11 @@ openLayoutSlotsButton.id = "layout-slots-button";
 openLayoutSlotsButton.type = "button";
 openLayoutSlotsButton.textContent = "저장/불러오기";
 toolbarActions.appendChild(openLayoutSlotsButton);
+const openFriendImportButton = document.createElement("button");
+openFriendImportButton.id = "friend-lookup-button";
+openFriendImportButton.type = "button";
+openFriendImportButton.textContent = "인게임 유저 조회";
+toolbarActions.appendChild(openFriendImportButton);
 const slotPanel = document.createElement("section");
 slotPanel.className = "slot-panel";
 slotPanel.innerHTML = `
@@ -544,29 +549,10 @@ slotPanel.innerHTML = `
     <h3>밭 저장하기</h3>
     <p>최대 10개 저장</p>
   </div>
-  <section id="friend-import-panel" class="friend-import-panel" hidden>
-    <div class="friend-import-copy">
-      <strong>공개 밭 불러오기</strong>
-      <p>닉네임으로 공개된 밭과 스킬 투자 정보를 가져옵니다.</p>
-    </div>
-    <div class="friend-import-controls">
-      <label class="field field-wide">
-        <span>닉네임</span>
-        <input id="friend-nickname-input" type="text" maxlength="20" placeholder="예: 별빛도서관" />
-      </label>
-      <button id="friend-import-button" class="slot-action-button" type="button">불러오기</button>
-    </div>
-    <p id="friend-import-note" class="friend-import-note">
-      공개 상태인 유저만 불러올 수 있으며 최신 정보는 프록시를 통해 조회합니다.
-    </p>
-  </section>
   <div id="slot-list" class="slot-list"></div>
 `;
 plannerCard.insertBefore(slotPanel, siteNote);
 const slotList = document.getElementById("slot-list");
-const friendImportPanel = document.getElementById("friend-import-panel");
-const friendNicknameInput = document.getElementById("friend-nickname-input");
-const friendImportButton = document.getElementById("friend-import-button");
 slotPanel.classList.add("slot-modal");
 const slotPanelCloseButton = document.createElement("button");
 slotPanelCloseButton.type = "button";
@@ -582,6 +568,86 @@ slotModalBackdrop.className = "slot-modal-backdrop";
 slotModalBackdrop.setAttribute("aria-label", "저장/불러오기 닫기");
 slotModalBackdrop.hidden = true;
 document.body.appendChild(slotModalBackdrop);
+const friendImportDialog = document.createElement("section");
+friendImportDialog.className = "slot-panel friend-lookup-modal";
+friendImportDialog.innerHTML = `
+  <div class="friend-lookup-header">
+    <div>
+      <h3>인게임 유저 조회</h3>
+      <p>공개된 밭과 스킬 투자 정보를 조회하고 현재 플래너에 바로 적용합니다.</p>
+    </div>
+  </div>
+  <section class="friend-import-panel">
+    <div class="friend-import-controls">
+      <label class="field field-wide">
+        <span>닉네임</span>
+        <input id="friend-nickname-input" type="text" maxlength="20" placeholder="예: 별빛도서관" />
+      </label>
+      <button id="friend-import-button" class="slot-action-button" type="button">조회</button>
+    </div>
+  </section>
+  <p id="friend-import-status" class="friend-import-status">닉네임을 입력한 뒤 조회를 눌러 주세요.</p>
+  <section id="friend-import-result" class="friend-import-result" hidden>
+    <div class="friend-import-summary-card">
+      <div class="friend-import-title-row">
+        <strong id="friend-result-nickname">-</strong>
+        <span id="friend-result-theme" class="friend-result-badge">테마 -</span>
+      </div>
+    <div id="friend-result-overview" class="friend-import-overview"></div>
+  </div>
+  <div class="friend-import-grid">
+      <article class="friend-import-info-card friend-import-preview-card">
+        <h4>밭 미리보기</h4>
+        <div id="friend-field-preview" class="friend-field-preview"></div>
+      </article>
+      <article class="friend-import-info-card">
+        <h4>밭 정보</h4>
+        <div id="friend-field-summary" class="friend-import-info-list"></div>
+      </article>
+      <article class="friend-import-info-card friend-import-skill-card">
+        <h4>스킬 정보</h4>
+        <div id="friend-skill-summary" class="friend-import-info-list"></div>
+      </article>
+      <article class="friend-import-info-card">
+        <h4>기타 정보</h4>
+        <div id="friend-other-summary" class="friend-import-info-list"></div>
+      </article>
+    </div>
+    <div class="friend-import-actions">
+      <button id="friend-apply-field-button" class="slot-action-button" type="button">밭 불러오기</button>
+      <button id="friend-apply-skills-button" class="slot-action-button subtle" type="button">스킬 불러오기</button>
+      <button id="friend-apply-all-button" class="slot-action-button" type="button">모두 불러오기</button>
+    </div>
+  </section>
+`;
+const friendImportCloseButton = document.createElement("button");
+friendImportCloseButton.type = "button";
+friendImportCloseButton.className = "friend-lookup-close";
+friendImportCloseButton.dataset.action = "close-friend-dialog";
+friendImportCloseButton.textContent = "닫기";
+friendImportDialog.querySelector(".friend-lookup-header").appendChild(friendImportCloseButton);
+friendImportDialog.hidden = true;
+document.body.appendChild(friendImportDialog);
+const friendImportBackdrop = document.createElement("button");
+friendImportBackdrop.type = "button";
+friendImportBackdrop.className = "slot-modal-backdrop";
+friendImportBackdrop.setAttribute("aria-label", "인게임 유저 조회 닫기");
+friendImportBackdrop.hidden = true;
+document.body.appendChild(friendImportBackdrop);
+const friendNicknameInput = document.getElementById("friend-nickname-input");
+const friendImportButton = document.getElementById("friend-import-button");
+const friendImportStatus = document.getElementById("friend-import-status");
+const friendImportResult = document.getElementById("friend-import-result");
+const friendResultNickname = document.getElementById("friend-result-nickname");
+const friendResultTheme = document.getElementById("friend-result-theme");
+const friendResultOverview = document.getElementById("friend-result-overview");
+const friendFieldPreview = document.getElementById("friend-field-preview");
+const friendFieldSummary = document.getElementById("friend-field-summary");
+const friendSkillSummary = document.getElementById("friend-skill-summary");
+const friendOtherSummary = document.getElementById("friend-other-summary");
+const friendApplyFieldButton = document.getElementById("friend-apply-field-button");
+const friendApplySkillsButton = document.getElementById("friend-apply-skills-button");
+const friendApplyAllButton = document.getElementById("friend-apply-all-button");
 const tabButtons = [...document.querySelectorAll(".tab-button")];
 const plannerView = document.getElementById("planner-view");
 const calculatorView = document.getElementById("calculator-view");
@@ -818,6 +884,8 @@ const state = {
   skillLevels: new Map(),
   activeSkillCategory: "",
   selectedSkillKey: "",
+  friendImportProfile: null,
+  friendImportSummary: null,
   cauldrons: Object.fromEntries(CAULDRON_TIERS.map((tier) => [tier.id, []])),
   recipeSelections: new Map(),
   hover: null,
@@ -1159,7 +1227,7 @@ function remoteOrnamentIsScarecrow(ornament) {
   return key.includes("scarecrow");
 }
 
-function layoutPayloadFromFriendProfile(profile) {
+function collectMappedFriendCells(profile) {
   if (!Array.isArray(profile?.grid)) {
     throw new Error("공개 밭 데이터에 grid 정보가 없습니다.");
   }
@@ -1180,12 +1248,29 @@ function layoutPayloadFromFriendProfile(profile) {
     throw new Error("공개 밭에 표시할 칸이 없습니다.");
   }
 
-  const minCol = Math.min(...remoteCells.map((entry) => entry.col));
-  const maxCol = Math.max(...remoteCells.map((entry) => entry.col));
-  const minRow = Math.min(...remoteCells.map((entry) => entry.row));
-  const maxRow = Math.max(...remoteCells.map((entry) => entry.row));
-  const colOffset = CENTER_CELL.col - Math.round((minCol + maxCol) / 2);
-  const rowOffset = CENTER_CELL.row - Math.round((minRow + maxRow) / 2);
+  const remoteCenterCol = Math.round((Math.min(...remoteCells.map((entry) => entry.col)) + Math.max(...remoteCells.map((entry) => entry.col))) / 2);
+  const remoteCenterRow = Math.round((Math.min(...remoteCells.map((entry) => entry.row)) + Math.max(...remoteCells.map((entry) => entry.row))) / 2);
+
+  return remoteCells.map(({ row, col, cell }) => {
+    const relativeCol = col - remoteCenterCol;
+    const relativeRow = row - remoteCenterRow;
+    const localCol = CENTER_CELL.col - relativeRow;
+    const localRow = CENTER_CELL.row + relativeCol;
+    const cropId = plantIdToCropId.get(cell?.plant?.id) ?? "";
+    return {
+      cell,
+      key: cellKey(localCol, localRow),
+      col: localCol,
+      row: localRow,
+      cropId,
+      conditions: Array.isArray(cell?.conditions) ? cell.conditions : [],
+      hasScarecrow: remoteOrnamentIsScarecrow(cell?.ornament),
+    };
+  });
+}
+
+function layoutPayloadFromFriendProfile(profile) {
+  const mappedCells = collectMappedFriendCells(profile);
 
   const cells = new Set();
   const plants = [];
@@ -1194,32 +1279,29 @@ function layoutPayloadFromFriendProfile(profile) {
   const fertileTiles = new Set();
   const scarecrowTiles = new Set();
 
-  remoteCells.forEach(({ row, col, cell }) => {
-    const localKey = cellKey(col + colOffset, row + rowOffset);
-    cells.add(localKey);
+  mappedCells.forEach((entry) => {
+    cells.add(entry.key);
 
-    const conditions = Array.isArray(cell?.conditions) ? cell.conditions : [];
-    if (conditions.includes("arid")) {
-      desertTiles.add(localKey);
+    if (entry.conditions.includes("arid")) {
+      desertTiles.add(entry.key);
     }
-    if (conditions.includes("toxic")) {
-      toxicTiles.add(localKey);
+    if (entry.conditions.includes("toxic")) {
+      toxicTiles.add(entry.key);
     }
-    if (conditions.includes("fertile")) {
-      fertileTiles.add(localKey);
+    if (entry.conditions.includes("fertile")) {
+      fertileTiles.add(entry.key);
     }
 
-    if (remoteOrnamentIsScarecrow(cell?.ornament)) {
-      scarecrowTiles.add(localKey);
+    if (entry.hasScarecrow) {
+      scarecrowTiles.add(entry.key);
     }
 
-    const cropId = plantIdToCropId.get(cell?.plant?.id);
-    if (cropId) {
+    if (entry.cropId) {
       plants.push([
-        localKey,
+        entry.key,
         {
-          cropId,
-          enhancement: clampEnhancementLevel(cell.plant.enhancement),
+          cropId: entry.cropId,
+          enhancement: clampEnhancementLevel(entry.cell?.plant?.enhancement),
         },
       ]);
     }
@@ -1256,7 +1338,97 @@ function applyFriendSkillProfile(profile) {
   }
 }
 
-async function importFriendProfileByNickname(nickname) {
+function friendSkillLevelsMap(profile) {
+  const spellLevels = profile?.spellLevels && typeof profile.spellLevels === "object"
+    ? profile.spellLevels
+    : {};
+  return new Map(
+    Object.entries(spellLevels)
+      .filter(([, level]) => Number(level) > 0)
+      .map(([key, level]) => [key, Number(level)]),
+  );
+}
+
+function summarizeFriendProfile(profile, nickname) {
+  const grid = Array.isArray(profile?.grid) ? profile.grid : [];
+  let totalCells = 0;
+  let plantCount = 0;
+  let fertileCount = 0;
+  let scarecrowCount = 0;
+  let desertCount = 0;
+  let toxicCount = 0;
+  const cropCounts = new Map();
+
+  grid.forEach((row) => {
+    if (!Array.isArray(row)) {
+      return;
+    }
+    row.forEach((cell) => {
+      if (!cell) {
+        return;
+      }
+      totalCells += 1;
+      const conditions = Array.isArray(cell.conditions) ? cell.conditions : [];
+      if (conditions.includes("fertile")) {
+        fertileCount += 1;
+      }
+      if (conditions.includes("arid")) {
+        desertCount += 1;
+      }
+      if (conditions.includes("toxic")) {
+        toxicCount += 1;
+      }
+      if (remoteOrnamentIsScarecrow(cell.ornament)) {
+        scarecrowCount += 1;
+      }
+      const cropId = plantIdToCropId.get(cell?.plant?.id);
+      if (cropId) {
+        plantCount += 1;
+        cropCounts.set(cropId, (cropCounts.get(cropId) ?? 0) + 1);
+      }
+    });
+  });
+
+  const spellLevels = profile?.spellLevels && typeof profile.spellLevels === "object"
+    ? profile.spellLevels
+    : {};
+  const learnedSkills = Object.entries(spellLevels)
+    .filter(([, level]) => Number(level) > 0)
+    .map(([key, level]) => ({ key, level: Number(level) }));
+  const topCrops = [...cropCounts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([cropId, count]) => `${cropById.get(cropId)?.name ?? cropId} ${count}개`);
+  const production = Array.isArray(profile?.raw?.production) ? profile.raw.production : [];
+  const topProduction = production
+    .slice()
+    .sort((a, b) => (Number(b?.perHour) || 0) - (Number(a?.perHour) || 0))
+    .slice(0, 3)
+    .map((entry) => `${entry.itemKey ?? entry.itemCode ?? "-"} ${formatNumber(Number(entry.perHour) || 0, 1)}/h`);
+  const playerLevel = Number.isFinite(Number(profile?.raw?.exp))
+    ? simulateLevelProgress(1, 0, Number(profile.raw.exp)).level
+    : 0;
+
+  return {
+    nickname: profile?.nickname ?? nickname,
+    theme: profile?.activeTheme ?? "default",
+    playerLevel,
+    totalCells,
+    plantCount,
+    fertileCount,
+    scarecrowCount,
+    desertCount,
+    toxicCount,
+    learnedSkillCount: learnedSkills.length,
+    learnedSkillPoints: learnedSkills.reduce((sum, entry) => sum + entry.level, 0),
+    disabledSpellCount: Array.isArray(profile?.disabledSpells) ? profile.disabledSpells.length : 0,
+    effectCount: Array.isArray(profile?.effects) ? profile.effects.length : 0,
+    topCrops,
+    topProduction,
+  };
+}
+
+async function fetchFriendProfileByNickname(nickname) {
   const trimmedNickname = String(nickname ?? "").trim();
   if (!trimmedNickname) {
     throw new Error("닉네임을 입력해 주세요.");
@@ -1285,20 +1457,34 @@ async function importFriendProfileByNickname(nickname) {
     throw new Error(message);
   }
 
+  return {
+    profile,
+    summary: summarizeFriendProfile(profile, payload?.nickname ?? trimmedNickname),
+  };
+}
+
+function applyFriendLayoutProfile(profile) {
   applyLayoutPayload(layoutPayloadFromFriendProfile(profile));
-  applyFriendSkillProfile(profile);
   saveLayoutToStorage();
-  saveSkillTreeToStorage();
   renderPalette();
   renderBoostPotionButton();
+  centerView();
+  draw();
+}
+
+function refreshAfterFriendSkillImport() {
+  saveSkillTreeToStorage();
   renderSkillTree();
   renderSkillPointCalculator();
-  centerView();
-  return {
-    nickname: profile?.nickname ?? payload?.nickname ?? trimmedNickname,
-    theme: profile?.activeTheme ?? "default",
-    effects: Array.isArray(profile?.effects) ? profile.effects.length : 0,
-  };
+  renderRecipeCalculator();
+  renderMaterialCalculator();
+  draw();
+}
+
+function applyFriendAllProfile(profile) {
+  applyFriendLayoutProfile(profile);
+  applyFriendSkillProfile(profile);
+  refreshAfterFriendSkillImport();
 }
 
 function currentShareUrl() {
@@ -1631,14 +1817,175 @@ function openSlotModal(mode) {
   renderLayoutSlots();
   slotPanel.hidden = false;
   slotModalBackdrop.hidden = false;
-  if (state.activeSlotMode === "layout") {
-    friendNicknameInput?.focus();
-  }
 }
 
 function closeSlotModal() {
   slotPanel.hidden = true;
   slotModalBackdrop.hidden = true;
+}
+
+function setFriendImportStatus(message, isError = false) {
+  friendImportStatus.textContent = message;
+  friendImportStatus.classList.toggle("error", isError);
+}
+
+function summaryRowsMarkup(rows) {
+  return rows.map((row) => `<p>${row}</p>`).join("");
+}
+
+function friendPreviewDataUrlFromCurrentCanvas() {
+  const pixelRatio = canvas.clientWidth > 0 ? canvas.width / canvas.clientWidth : 1;
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+
+  for (const key of state.cells) {
+    const { col, row } = parseKey(key);
+    const points = polygonForCell(col, row).map((point) => worldToScreen(point.x, point.y));
+    points.forEach((point) => {
+      minX = Math.min(minX, point.x);
+      maxX = Math.max(maxX, point.x);
+      minY = Math.min(minY, point.y);
+      maxY = Math.max(maxY, point.y);
+    });
+  }
+
+  if (!Number.isFinite(minX) || !Number.isFinite(maxX) || !Number.isFinite(minY) || !Number.isFinite(maxY)) {
+    return canvas.toDataURL("image/png");
+  }
+
+  const padding = 20;
+  const sourceX = Math.max(0, Math.floor((minX - padding) * pixelRatio));
+  const sourceY = Math.max(0, Math.floor((minY - padding) * pixelRatio));
+  const sourceWidth = Math.min(
+    canvas.width - sourceX,
+    Math.ceil((maxX - minX + padding * 2) * pixelRatio),
+  );
+  const sourceHeight = Math.min(
+    canvas.height - sourceY,
+    Math.ceil((maxY - minY + padding * 2) * pixelRatio),
+  );
+
+  const previewCanvas = document.createElement("canvas");
+  previewCanvas.width = Math.max(1, sourceWidth);
+  previewCanvas.height = Math.max(1, sourceHeight);
+  const previewCtx = previewCanvas.getContext("2d");
+  previewCtx.drawImage(
+    canvas,
+    sourceX,
+    sourceY,
+    sourceWidth,
+    sourceHeight,
+    0,
+    0,
+    sourceWidth,
+    sourceHeight,
+  );
+  return previewCanvas.toDataURL("image/png");
+}
+
+function renderFriendFieldPreview(profile) {
+  const previewPayload = layoutPayloadFromFriendProfile(profile);
+  const snapshot = {
+    cells: new Set(state.cells),
+    addSlots: state.addSlots.map((slot) => ({ ...slot })),
+    plants: new Map(state.plants),
+    desertTiles: new Set(state.desertTiles),
+    toxicTiles: new Set(state.toxicTiles),
+    fertileTiles: new Set(state.fertileTiles),
+    scarecrowTiles: new Set(state.scarecrowTiles),
+    galePotionActive: state.galePotionActive,
+    boostPotionActive: state.boostPotionActive,
+    selectedCropId: state.selectedCropId,
+    selectedCropEnhancement: state.selectedCropEnhancement,
+    skillLevels: new Map(state.skillLevels),
+    activeSkillCategory: state.activeSkillCategory,
+    selectedSkillKey: state.selectedSkillKey,
+    hover: state.hover ? { ...state.hover } : null,
+    hoverPoint: state.hoverPoint ? { ...state.hoverPoint } : null,
+    view: { ...state.view },
+  };
+
+  try {
+    applyLayoutPayload(previewPayload);
+    state.skillLevels = friendSkillLevelsMap(profile);
+    state.hover = null;
+    state.hoverPoint = null;
+    centerView();
+    const previewDataUrl = friendPreviewDataUrlFromCurrentCanvas();
+    friendFieldPreview.innerHTML = `<img class="friend-preview-image" src="${previewDataUrl}" alt="밭 미리보기" />`;
+  } finally {
+    state.cells = snapshot.cells;
+    state.addSlots = snapshot.addSlots;
+    state.plants = snapshot.plants;
+    state.desertTiles = snapshot.desertTiles;
+    state.toxicTiles = snapshot.toxicTiles;
+    state.fertileTiles = snapshot.fertileTiles;
+    state.scarecrowTiles = snapshot.scarecrowTiles;
+    state.galePotionActive = snapshot.galePotionActive;
+    state.boostPotionActive = snapshot.boostPotionActive;
+    state.selectedCropId = snapshot.selectedCropId;
+    state.selectedCropEnhancement = snapshot.selectedCropEnhancement;
+    state.skillLevels = snapshot.skillLevels;
+    state.activeSkillCategory = snapshot.activeSkillCategory;
+    state.selectedSkillKey = snapshot.selectedSkillKey;
+    state.hover = snapshot.hover;
+    state.hoverPoint = snapshot.hoverPoint;
+    state.view = snapshot.view;
+    draw();
+  }
+}
+
+function renderFriendImportPreview() {
+  const summary = state.friendImportSummary;
+  const profile = state.friendImportProfile;
+  if (!summary || !profile) {
+    friendImportResult.hidden = true;
+    friendApplyFieldButton.disabled = true;
+    friendApplySkillsButton.disabled = true;
+    friendApplyAllButton.disabled = true;
+    friendResultTheme.hidden = false;
+    friendResultOverview.hidden = false;
+    friendFieldSummary.closest(".friend-import-info-card").hidden = false;
+    friendOtherSummary.closest(".friend-import-info-card").hidden = false;
+    friendFieldPreview.innerHTML = "";
+    return;
+  }
+
+  friendImportResult.hidden = false;
+  friendApplyFieldButton.disabled = false;
+  friendApplySkillsButton.disabled = false;
+  friendApplyAllButton.disabled = false;
+  renderFriendFieldPreview(profile);
+  friendResultNickname.textContent = summary.nickname;
+  friendResultTheme.hidden = true;
+  friendResultOverview.hidden = true;
+  friendFieldSummary.closest(".friend-import-info-card").hidden = true;
+  friendOtherSummary.closest(".friend-import-info-card").hidden = true;
+  friendSkillSummary.closest(".friend-import-info-card").hidden = false;
+  friendSkillSummary.innerHTML = summaryRowsMarkup([
+    `투자 ${summary.learnedSkillPoints}pt / Lv ${summary.playerLevel || "-"}`,
+  ]);
+}
+
+function resetFriendImportPreview() {
+  state.friendImportProfile = null;
+  state.friendImportSummary = null;
+  renderFriendImportPreview();
+}
+
+function openFriendImportDialog() {
+  resetFriendImportPreview();
+  setFriendImportStatus("닉네임을 입력한 뒤 조회를 눌러 주세요.");
+  friendImportDialog.hidden = false;
+  friendImportBackdrop.hidden = false;
+  friendNicknameInput.focus();
+}
+
+function closeFriendImportDialog() {
+  friendImportDialog.hidden = true;
+  friendImportBackdrop.hidden = true;
 }
 
 function renderLayoutSlots() {
@@ -1651,10 +1998,6 @@ function renderLayoutSlots() {
   if (description) {
     description.textContent = "최대 10개 저장";
   }
-  if (friendImportPanel) {
-    friendImportPanel.hidden = state.activeSlotMode !== "layout";
-  }
-
   slotList.innerHTML = "";
 
   config.slots.forEach((slot, index) => {
@@ -5248,17 +5591,6 @@ function drawScarecrow(col, row, effect, isHovered, deferredTextDraws = []) {
 
   ctx.restore();
 
-  deferredTextDraws.push(() => {
-    drawOverlayLabel({
-      text: "허",
-      x: center.x,
-      y: center.y + 25,
-      font: '700 10px "Malgun Gothic", sans-serif',
-      fillStyle: "#7e4c1f",
-      strokeStyle: "rgba(255, 246, 223, 0.92)",
-      lineWidth: 2.4,
-    });
-  });
 }
 
 function drawPlant(col, row, crop, enhancement, effect, isHovered, deferredTextDraws = []) {
@@ -5295,7 +5627,7 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered, deferredTextD
   ctx.restore();
 
   if (hasCropImage) {
-    const imageSize = radius * 2.15;
+    const imageSize = radius * 1.72;
     ctx.save();
     ctx.globalAlpha = effect.dead ? 0.58 : 1;
     ctx.drawImage(
@@ -5354,25 +5686,8 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered, deferredTextD
   }
 
   if (effect.scarecrowProtected > 0) {
-    ctx.save();
-    ctx.fillStyle = "rgba(126, 76, 31, 0.96)";
-    ctx.beginPath();
-    ctx.roundRect(center.x - 11, center.y + 8, 22, 16, 6);
-    ctx.fill();
-    ctx.restore();
     deferredTextDraws.push(() => {
-      drawOverlayLabel({
-        text: "항마",
-        x: center.x,
-        y: center.y + 16,
-        font: '700 10px "Malgun Gothic", sans-serif',
-        fillStyle: "#fff6df",
-        strokeStyle: "rgba(76, 40, 12, 0.98)",
-        lineWidth: 3,
-      });
-    });
-    deferredTextDraws.push(() => {
-      drawShieldBadge(center.x, center.y + 16);
+      drawShieldBadge(center.x, center.y + 12);
     });
   }
 
@@ -5400,18 +5715,18 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered, deferredTextD
     ctx.save();
     ctx.fillStyle = effect.windSpawned ? "rgba(28, 114, 103, 0.94)" : "rgba(69, 40, 16, 0.92)";
     ctx.beginPath();
-    ctx.roundRect(center.x + 6, center.y - 24, 22, 16, 6);
+    ctx.roundRect(center.x + 10, center.y - 5, 13, 10, 4);
     ctx.fill();
     ctx.restore();
     deferredTextDraws.push(() => {
       drawOverlayLabel({
         text: `+${enhancement}`,
-        x: center.x + 17,
-        y: center.y - 16,
-        font: '700 10px "Segoe UI", sans-serif',
+        x: center.x + 16.5,
+        y: center.y + 0.5,
+        font: '700 6px "Segoe UI", sans-serif',
         fillStyle: effect.windSpawned ? "#f4fffb" : "#fff6df",
         strokeStyle: effect.windSpawned ? "rgba(16, 79, 72, 0.96)" : "rgba(44, 24, 12, 0.96)",
-        lineWidth: 2.8,
+        lineWidth: 1.8,
       });
     });
   }
@@ -5445,35 +5760,7 @@ function drawPlant(col, row, crop, enhancement, effect, isHovered, deferredTextD
     });
   }
 
-  if (effect.watered > 0 || effect.toxic > 0 || effect.poisoned > 0 || effect.sunBuff > 0) {
-    const markers = [];
-    if (effect.watered > 0) markers.push({ color: "#4ea7d8", text: `W${effect.watered}` });
-    if (effect.toxic > 0) markers.push({ color: "#8e5fce", text: `T${effect.toxic}` });
-    if (effect.poisoned > 0) markers.push({ color: "#8f6ab4", text: `P${effect.poisoned}` });
-    if (effect.sunBuff > 0) markers.push({ color: "#f0c445", text: `S${effect.sunBuff}` });
-
-    markers.forEach((marker, index) => {
-      const x = center.x - 14 + index * 18;
-      const y = center.y + 24;
-      ctx.save();
-      ctx.fillStyle = marker.color;
-      ctx.beginPath();
-      ctx.roundRect(x - 7, y - 7, 16, 14, 5);
-      ctx.fill();
-      ctx.restore();
-      deferredTextDraws.push(() => {
-        drawOverlayLabel({
-          text: marker.text,
-          x: x + 1,
-          y: y + 1,
-          font: '700 9px "Segoe UI", sans-serif',
-          fillStyle: "#fffaf2",
-          strokeStyle: "rgba(44, 24, 12, 0.96)",
-          lineWidth: 2.4,
-        });
-      });
-    });
-  }
+  // Hidden by request: per-cell effect count markers (W/T/P/S).
 }
 
 function getHoveredKey(kind) {
@@ -5530,10 +5817,11 @@ function drawOverlayLabel({
 function drawShieldBadge(x, y) {
   ctx.save();
   ctx.translate(x, y);
+  ctx.scale(0.55, 0.55);
 
   ctx.beginPath();
   ctx.roundRect(-11, -8, 22, 16, 6);
-  ctx.fillStyle = "rgba(126, 76, 31, 0.96)";
+  ctx.fillStyle = "rgba(23, 112, 123, 0.98)";
   ctx.fill();
 
   ctx.beginPath();
@@ -5544,7 +5832,7 @@ function drawShieldBadge(x, y) {
   ctx.quadraticCurveTo(-4.3, 6.4, -5, 2.5);
   ctx.lineTo(-5.5, -2.4);
   ctx.closePath();
-  ctx.fillStyle = "#fff6df";
+  ctx.fillStyle = "#effffd";
   ctx.fill();
 
   ctx.beginPath();
@@ -5555,7 +5843,7 @@ function drawShieldBadge(x, y) {
   ctx.quadraticCurveTo(-2.3, 4.2, -2.8, 1.5);
   ctx.lineTo(-3.1, -1.7);
   ctx.closePath();
-  ctx.fillStyle = "rgba(126, 76, 31, 0.96)";
+  ctx.fillStyle = "rgba(35, 152, 167, 0.98)";
   ctx.fill();
 
   ctx.restore();
@@ -5638,7 +5926,7 @@ function draw(options = {}) {
       drawWindPreview(col, row, effect);
     }
     if (!placement && !hasScarecrow && effect.scarecrowProtected > 0) {
-      queueScarecrowProtectionBadge(deferredTextDraws, center.x, center.y + 16);
+      queueScarecrowProtectionBadge(deferredTextDraws, center.x, center.y + 12);
     }
   }
 
@@ -5787,18 +6075,40 @@ function pointerPosition(event) {
 
 function centerView() {
   state.addSlots = collectAddSlots();
-  const bounds = getCellBounds();
-  const worldWidth = bounds.maxX - bounds.minX;
-  const worldHeight = bounds.maxY - bounds.minY;
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+
+  for (const key of state.cells) {
+    const { col, row } = parseKey(key);
+    const points = polygonForCell(col, row);
+    points.forEach((point) => {
+      minX = Math.min(minX, point.x);
+      maxX = Math.max(maxX, point.x);
+      minY = Math.min(minY, point.y);
+      maxY = Math.max(maxY, point.y);
+    });
+  }
+
+  if (!Number.isFinite(minX) || !Number.isFinite(maxX) || !Number.isFinite(minY) || !Number.isFinite(maxY)) {
+    draw();
+    return;
+  }
+
+  const paddingX = CELL_SIZE * 0.9;
+  const paddingY = CELL_SIZE * 0.7;
+  const worldWidth = (maxX - minX) + paddingX * 2;
+  const worldHeight = (maxY - minY) + paddingY * 2;
   const scaleX = canvas.clientWidth / Math.max(worldWidth, 1);
   const scaleY = canvas.clientHeight / Math.max(worldHeight, 1);
   state.view.scale = Math.max(
     MIN_SCALE,
-    Math.min(MAX_SCALE, Math.min(scaleX, scaleY) * 0.88),
+    Math.min(MAX_SCALE, Math.min(scaleX, scaleY)),
   );
 
-  const worldCenterX = (bounds.minX + bounds.maxX) / 2;
-  const worldCenterY = (bounds.minY + bounds.maxY) / 2;
+  const worldCenterX = (minX + maxX) / 2;
+  const worldCenterY = (minY + maxY) / 2;
   state.view.offsetX = canvas.clientWidth / 2 - worldCenterX * state.view.scale;
   state.view.offsetY = canvas.clientHeight / 2 - worldCenterY * state.view.scale;
   draw();
@@ -6331,16 +6641,24 @@ openCauldronSlotsButton.addEventListener("click", () => {
   openSlotModal("cauldron");
 });
 
+openFriendImportButton.addEventListener("click", () => {
+  openFriendImportDialog();
+});
+
 friendImportButton?.addEventListener("click", async () => {
   const nickname = friendNicknameInput?.value ?? "";
   friendImportButton.disabled = true;
+  setFriendImportStatus("조회 중...");
+  resetFriendImportPreview();
   try {
-    const result = await importFriendProfileByNickname(nickname);
-    closeSlotModal();
-    showCopyFeedback(`${result.nickname} 공개 밭을 불러왔습니다.`);
+    const result = await fetchFriendProfileByNickname(nickname);
+    state.friendImportProfile = result.profile;
+    state.friendImportSummary = result.summary;
+    renderFriendImportPreview();
+    setFriendImportStatus(`${result.summary.nickname} 조회가 완료되었습니다.`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "공개 밭을 불러오지 못했습니다.";
-    showCopyFeedback(message, true);
+    setFriendImportStatus(message, true);
   } finally {
     friendImportButton.disabled = false;
   }
@@ -6353,11 +6671,46 @@ friendNicknameInput?.addEventListener("keydown", (event) => {
   }
 });
 
+friendApplyFieldButton?.addEventListener("click", () => {
+  if (!state.friendImportProfile || !state.friendImportSummary) {
+    return;
+  }
+  applyFriendLayoutProfile(state.friendImportProfile);
+  closeFriendImportDialog();
+  showCopyFeedback(`${state.friendImportSummary.nickname} 밭을 불러왔습니다.`);
+});
+
+friendApplySkillsButton?.addEventListener("click", () => {
+  if (!state.friendImportProfile || !state.friendImportSummary) {
+    return;
+  }
+  applyFriendSkillProfile(state.friendImportProfile);
+  refreshAfterFriendSkillImport();
+  closeFriendImportDialog();
+  showCopyFeedback(`${state.friendImportSummary.nickname} 스킬을 불러왔습니다.`);
+});
+
+friendApplyAllButton?.addEventListener("click", () => {
+  if (!state.friendImportProfile || !state.friendImportSummary) {
+    return;
+  }
+  applyFriendAllProfile(state.friendImportProfile);
+  closeFriendImportDialog();
+  showCopyFeedback(`${state.friendImportSummary.nickname} 밭과 스킬을 모두 불러왔습니다.`);
+});
+
 slotModalBackdrop.addEventListener("click", closeSlotModal);
+friendImportBackdrop.addEventListener("click", closeFriendImportDialog);
 
 slotPanel.addEventListener("click", (event) => {
   if (event.target.dataset.action === "close-slot-dialog") {
     closeSlotModal();
+  }
+});
+
+friendImportDialog.addEventListener("click", (event) => {
+  if (event.target.dataset.action === "close-friend-dialog") {
+    closeFriendImportDialog();
   }
 });
 
@@ -6680,6 +7033,7 @@ renderPanLockButton();
 renderStatsPanel();
 renderBoostPotionButton();
 renderLayoutSlots();
+renderFriendImportPreview();
 renderRecipeCalculator();
 renderMaterialCalculator();
 initializeTimeCalculatorData();
