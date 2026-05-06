@@ -53,6 +53,43 @@ try {
     await page.evaluate(() => window.render_game_to_text()),
   );
 
+  const legacyPayload = {
+    cells: [
+      "0,0", "2,0", "4,0", "6,0",
+      "1,1", "3,1", "5,1",
+      "0,2", "2,2", "4,2", "6,2",
+      "1,3", "3,3", "5,3",
+      "0,4", "2,4", "4,4", "6,4",
+      "1,5", "3,5", "5,5",
+      "0,6", "2,6", "4,6", "6,6",
+    ],
+    plants: [["3,3", { cropId: "water-flower", enhancement: 2 }]],
+    desertTiles: ["1,3"],
+    toxicTiles: ["5,3"],
+    scarecrowTiles: ["3,1"],
+    selectedCropId: "herb",
+    selectedCropEnhancement: 0,
+  };
+  await page.evaluate((payload) => {
+    localStorage.setItem("alchansia-layout-v1", JSON.stringify(payload));
+  }, legacyPayload);
+  await page.reload({ waitUntil: "networkidle" });
+
+  const migratedLegacyState = JSON.parse(
+    await page.evaluate(() => window.render_game_to_text()),
+  );
+  if (migratedLegacyState.totalCells !== 25) {
+    throw new Error(`legacy migration cell count mismatch: ${migratedLegacyState.totalCells}`);
+  }
+  if (
+    migratedLegacyState.plants.length !== 1
+    || migratedLegacyState.plants[0].col !== 3
+    || migratedLegacyState.plants[0].row !== 3
+    || migratedLegacyState.plants[0].enhancement !== 2
+  ) {
+    throw new Error(`legacy migration plant mismatch: ${JSON.stringify(migratedLegacyState.plants)}`);
+  }
+
   await page.evaluate(() => window.__planner_debug.selectCrop("water-flower"));
   const baseCell = await page.evaluate(() => {
     const cell = window.__planner_debug.getCells()[0];
@@ -131,6 +168,7 @@ try {
     JSON.stringify(
       {
         initialState,
+        migratedLegacyState,
         plantedState,
         removedTileState,
         expandedState,
@@ -147,6 +185,8 @@ try {
   console.log(
     JSON.stringify({
       initialTotalCells: initialState.totalCells,
+      migratedLegacyTotalCells: migratedLegacyState.totalCells,
+      migratedLegacyPlantCount: migratedLegacyState.plants.length,
       plantedCount: plantedState.plants.length,
       removedTileTotalCells: removedTileState.totalCells,
       expandedTotalCells: expandedState.totalCells,

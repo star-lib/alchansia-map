@@ -201,8 +201,8 @@ async function runDesktop(results, browser) {
     }
   });
 
-  await runScenario(results, browser, mode, "planner tool palette has four tools", async (page) => {
-    assert(await page.locator("#tool-palette .crop-button").count() === 4, "tool palette count mismatch");
+  await runScenario(results, browser, mode, "planner tool palette has six tools", async (page) => {
+    assert(await page.locator("#tool-palette .crop-button").count() === 6, "tool palette count mismatch");
   });
 
   await runScenario(results, browser, mode, "planner crop palette has twelve crops", async (page) => {
@@ -441,7 +441,7 @@ async function runDesktop(results, browser) {
   await runScenario(results, browser, mode, "planner dew root plus red flower yields 240 per hour", async (page) => {
     await setLayoutPayload(page, buildLayoutPayload([
       ["3,3", "water-flower"],
-      ["2,2", "red-leaf"],
+      ["3,2", "red-leaf"],
     ]));
     const texts = await getProductionTexts(page);
     assert(texts.some((text) => text.includes("붉은꽃") && text.includes("240개")), "dew root + red flower yield is not 240/h");
@@ -450,7 +450,7 @@ async function runDesktop(results, browser) {
   await runScenario(results, browser, mode, "planner dew root plus fire vine yields zero", async (page) => {
     await setLayoutPayload(page, buildLayoutPayload([
       ["3,3", "water-flower"],
-      ["2,2", "fire-flower"],
+      ["3,2", "fire-flower"],
     ]));
     const texts = await getProductionTexts(page);
     assert(texts.some((text) => text.includes("불씨덩굴") && text.includes("0개")), "dew root + fire vine did not stay at zero");
@@ -482,8 +482,8 @@ async function runMobile(results, browser) {
     assert(!intersects(actionsBox, paletteBox), "planner actions overlap the palette dock on mobile");
   });
 
-  await runScenario(results, browser, mode, "mobile planner tool palette still shows four tools", async (page) => {
-    assert(await page.locator("#tool-palette .crop-button").count() === 4, "mobile tool palette count mismatch");
+  await runScenario(results, browser, mode, "mobile planner tool palette still shows six tools", async (page) => {
+    assert(await page.locator("#tool-palette .crop-button").count() === 6, "mobile tool palette count mismatch");
   });
 
   await runScenario(results, browser, mode, "mobile crop palette is horizontally scrollable", async (page) => {
@@ -675,7 +675,7 @@ async function runMobile(results, browser) {
   await runScenario(results, browser, mode, "mobile planner dew root plus red flower still yields 240 per hour", async (page) => {
     await setLayoutPayload(page, buildLayoutPayload([
       ["3,3", "water-flower"],
-      ["2,2", "red-leaf"],
+      ["3,2", "red-leaf"],
     ]));
     const texts = await getProductionTexts(page);
     assert(texts.some((text) => text.includes("붉은꽃") && text.includes("240개")), "mobile dew root + red flower yield is not 240/h");
@@ -684,7 +684,7 @@ async function runMobile(results, browser) {
   await runScenario(results, browser, mode, "mobile planner dew root plus fire vine still yields zero", async (page) => {
     await setLayoutPayload(page, buildLayoutPayload([
       ["3,3", "water-flower"],
-      ["2,2", "fire-flower"],
+      ["3,2", "fire-flower"],
     ]));
     const texts = await getProductionTexts(page);
     assert(texts.some((text) => text.includes("불씨덩굴") && text.includes("0개")), "mobile dew root + fire vine did not stay at zero");

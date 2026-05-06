@@ -1,8 +1,11 @@
-const STARTING_ROWS = [4, 3, 4, 3, 4, 3, 4];
 const CELL_SIZE = 44;
-const HALF_W = CELL_SIZE;
-const HALF_H = CELL_SIZE * 0.58;
+const HALF_W = CELL_SIZE / 2;
+const HALF_H = CELL_SIZE / 2;
 const GRID_PAD = 2;
+const RENDER_ROTATION = Math.PI / 4;
+const RENDER_COS = Math.cos(RENDER_ROTATION);
+const RENDER_SIN = Math.sin(RENDER_ROTATION);
+const RENDER_VERTICAL_SCALE = 0.58;
 const MIN_SCALE = 0.45;
 const MAX_SCALE = 2.8;
 const ZOOM_FACTOR = 1.12;
@@ -614,6 +617,7 @@ openCauldronSlotsButton.textContent = "저장/불러오기";
 cauldronBoard.before(openCauldronSlotsButton);
 
 const STORAGE_KEY = "alchansia-layout-v1";
+const LAYOUT_VERSION = 2;
 const SLOT_STORAGE_KEY = "alchansia-layout-slots-v1";
 const CALCULATOR_STORAGE_KEY = "alchansia-calculator-v1";
 const MATERIAL_STORAGE_KEY = "alchansia-materials-v1";
@@ -765,10 +769,10 @@ const MASTER_WITCH_TITLE_COMBOS = {
 };
 const CENTER_CELL = { col: 3, row: 3 };
 const BASE_BOUNDS = {
-  minCol: 0,
-  maxCol: 6,
-  minRow: 0,
-  maxRow: 6,
+  minCol: 1,
+  maxCol: 5,
+  minRow: 1,
+  maxRow: 5,
 };
 
 const state = {
@@ -857,12 +861,11 @@ let plannerAnalysisJobType = "";
 function createStartingCells() {
   const cells = new Set();
 
-  STARTING_ROWS.forEach((count, row) => {
-    const offset = row % 2 === 0 ? 0 : 1;
-    for (let col = 0; col < count; col += 1) {
-      cells.add(cellKey(col * 2 + offset, row));
+  for (let row = BASE_BOUNDS.minRow; row <= BASE_BOUNDS.maxRow; row += 1) {
+    for (let col = BASE_BOUNDS.minCol; col <= BASE_BOUNDS.maxCol; col += 1) {
+      cells.add(cellKey(col, row));
     }
-  });
+  }
 
   return cells;
 }
@@ -949,13 +952,14 @@ function basePlannerCellConditions(key) {
 
 function logicalPoint(col, row) {
   return {
-    x: (col + row) / 2,
-    y: (row - col) / 2,
+    x: col,
+    y: row,
   };
 }
 
 function currentLayoutPayload() {
   return {
+    layoutVersion: LAYOUT_VERSION,
     cells: [...state.cells],
     plants: [...state.plants.entries()]
       .map(([key, placement]) => [key, normalizePlantPlacement(placement)])
@@ -969,13 +973,87 @@ function currentLayoutPayload() {
   };
 }
 
+function migrateLegacyCellKey(key) {
+  const { col, row } = parseKey(key);
+  if (!Number.isFinite(col) || !Number.isFinite(row)) {
+    return null;
+  }
+  if ((col + row) % 2 !== 0) {
+    return key;
+  }
+
+  return cellKey((col - row) / 2 + CENTER_CELL.col, (col + row) / 2);
+}
+
+function isLegacyLayoutPayload(payload) {
+  if (!payload || payload.layoutVersion >= LAYOUT_VERSION) {
+    return false;
+  }
+
+  const cells = Array.isArray(payload.cells)
+    ? payload.cells.filter((value) => typeof value === "string")
+    : [];
+  if (!cells.length) {
+    return false;
+  }
+
+  return cells.every((key) => {
+    const { col, row } = parseKey(key);
+    return Number.isFinite(col) && Number.isFinite(row) && (col + row) % 2 === 0;
+  });
+}
+
+function migrateLegacyLayoutPayload(payload) {
+  if (!isLegacyLayoutPayload(payload)) {
+    return payload;
+  }
+
+  const migrateKeyArray = (values) =>
+    Array.isArray(values)
+      ? [...new Set(values
+          .filter((value) => typeof value === "string")
+          .map((value) => migrateLegacyCellKey(value))
+          .filter(Boolean))]
+      : [];
+
+  const migratePlants = (plants) =>
+    Array.isArray(plants)
+      ? plants
+          .map((entry) => {
+            if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string") {
+              return null;
+            }
+
+            const migratedKey = migrateLegacyCellKey(entry[0]);
+            return migratedKey ? [migratedKey, entry[1]] : null;
+          })
+          .filter(Boolean)
+      : [];
+
+  return {
+    ...payload,
+    layoutVersion: LAYOUT_VERSION,
+    cells: migrateKeyArray(payload.cells),
+    plants: migratePlants(payload.plants),
+    desertTiles: migrateKeyArray(payload.desertTiles),
+    toxicTiles: migrateKeyArray(
+      Array.isArray(payload.toxicTiles) ? payload.toxicTiles : payload.poisonTiles,
+    ),
+    poisonTiles: migrateKeyArray(
+      Array.isArray(payload.poisonTiles) ? payload.poisonTiles : payload.toxicTiles,
+    ),
+    scarecrowTiles: migrateKeyArray(payload.scarecrowTiles),
+  };
+}
+
 function applyLayoutPayload(payload) {
-  const cells = Array.isArray(payload?.cells) && payload.cells.length
-    ? new Set(payload.cells.filter((value) => typeof value === "string"))
+  const normalizedPayload = migrateLegacyLayoutPayload(payload);
+  const cells = Array.isArray(normalizedPayload?.cells) && normalizedPayload.cells.length
+    ? new Set(normalizedPayload.cells.filter((value) => typeof value === "string"))
     : createStartingCells();
   const plants = new Map(
-    Array.isArray(payload?.plants)
-      ? payload.plants
+    Array.isArray(normalizedPayload?.plants)
+      ? normalizedPayload.plants
           .map((entry) => {
             if (!Array.isArray(entry) || entry.length !== 2 || typeof entry[0] !== "string") {
               return null;
@@ -988,21 +1066,21 @@ function applyLayoutPayload(payload) {
       : [],
   );
   const desertTiles = new Set(
-    Array.isArray(payload?.desertTiles)
-      ? payload.desertTiles.filter((value) => typeof value === "string")
+    Array.isArray(normalizedPayload?.desertTiles)
+      ? normalizedPayload.desertTiles.filter((value) => typeof value === "string")
       : [],
   );
-  const toxicTileSource = Array.isArray(payload?.toxicTiles)
-    ? payload.toxicTiles
-    : Array.isArray(payload?.poisonTiles)
-      ? payload.poisonTiles
+  const toxicTileSource = Array.isArray(normalizedPayload?.toxicTiles)
+    ? normalizedPayload.toxicTiles
+    : Array.isArray(normalizedPayload?.poisonTiles)
+      ? normalizedPayload.poisonTiles
       : [];
   const toxicTiles = new Set(
     toxicTileSource.filter((value) => typeof value === "string"),
   );
   const scarecrowTiles = new Set(
-    Array.isArray(payload?.scarecrowTiles)
-      ? payload.scarecrowTiles.filter((value) => typeof value === "string")
+    Array.isArray(normalizedPayload?.scarecrowTiles)
+      ? normalizedPayload.scarecrowTiles.filter((value) => typeof value === "string")
       : [],
   );
   state.cells = cells.size ? cells : createStartingCells();
@@ -1010,12 +1088,12 @@ function applyLayoutPayload(payload) {
   state.desertTiles = new Set([...desertTiles].filter((key) => state.cells.has(key)));
   state.toxicTiles = new Set([...toxicTiles].filter((key) => state.cells.has(key)));
   state.scarecrowTiles = new Set([...scarecrowTiles].filter((key) => state.cells.has(key)));
-  state.galePotionActive = Boolean(payload?.galePotionActive);
+  state.galePotionActive = Boolean(normalizedPayload?.galePotionActive);
 
-  if (cropById.has(payload?.selectedCropId)) {
-    state.selectedCropId = payload.selectedCropId;
+  if (cropById.has(normalizedPayload?.selectedCropId)) {
+    state.selectedCropId = normalizedPayload.selectedCropId;
   }
-  state.selectedCropEnhancement = clampEnhancementLevel(payload?.selectedCropEnhancement);
+  state.selectedCropEnhancement = clampEnhancementLevel(normalizedPayload?.selectedCropEnhancement);
 }
 
 function encodeLayoutPayload(payload) {
@@ -3723,12 +3801,12 @@ function expansionCostText(enhancement) {
   return `${enhancement}강 마력결정 1개 + ${enhancement}강 각인석 1개`;
 }
 
-function getDiagonalNeighbors(col, row) {
+function getAdjacentNeighbors(col, row) {
   return [
-    { col: col - 1, row: row - 1 },
-    { col: col + 1, row: row - 1 },
-    { col: col - 1, row: row + 1 },
-    { col: col + 1, row: row + 1 },
+    { col: col, row: row - 1 },
+    { col: col + 1, row },
+    { col: col, row: row + 1 },
+    { col: col - 1, row },
   ];
 }
 
@@ -3738,7 +3816,7 @@ function collectAddSlots() {
   for (const key of state.cells) {
     const { col, row } = parseKey(key);
 
-    for (const neighbor of getDiagonalNeighbors(col, row)) {
+    for (const neighbor of getAdjacentNeighbors(col, row)) {
       const neighborKey = cellKey(neighbor.col, neighbor.row);
       if (state.cells.has(neighborKey) || slots.has(neighborKey)) {
         continue;
@@ -3752,20 +3830,35 @@ function collectAddSlots() {
 }
 
 function gridToPixel(col, row) {
-  return {
-    x: col * HALF_W,
-    y: row * HALF_H,
-  };
+  return projectRenderPoint(col * CELL_SIZE, row * CELL_SIZE);
 }
 
 function polygonForCell(col, row) {
   const center = gridToPixel(col, row);
-  return [
-    { x: center.x, y: center.y - HALF_H },
-    { x: center.x + HALF_W, y: center.y },
-    { x: center.x, y: center.y + HALF_H },
-    { x: center.x - HALF_W, y: center.y },
+  const offsets = [
+    { x: -HALF_W, y: -HALF_H },
+    { x: HALF_W, y: -HALF_H },
+    { x: HALF_W, y: HALF_H },
+    { x: -HALF_W, y: HALF_H },
   ];
+  return [
+    ...offsets.map((offset) => {
+      const projectedOffset = projectRenderPoint(offset.x, offset.y);
+      return {
+        x: center.x + projectedOffset.x,
+        y: center.y + projectedOffset.y,
+      };
+    }),
+  ];
+}
+
+function projectRenderPoint(x, y) {
+  const rotatedX = x * RENDER_COS + y * RENDER_SIN;
+  const rotatedY = -x * RENDER_SIN + y * RENDER_COS;
+  return {
+    x: rotatedX,
+    y: rotatedY * RENDER_VERTICAL_SCALE,
+  };
 }
 
 function drawDiamond(points, options) {
@@ -3789,20 +3882,36 @@ function getCellBounds() {
   const cells = [...state.cells].map(parseKey);
   const cols = cells.map(({ col }) => col);
   const rows = cells.map(({ row }) => row);
-  const minCol = Math.min(...cols);
-  const maxCol = Math.max(...cols);
-  const minRow = Math.min(...rows);
-  const maxRow = Math.max(...rows);
+  const minCol = Math.min(...cols) - GRID_PAD;
+  const maxCol = Math.max(...cols) + GRID_PAD;
+  const minRow = Math.min(...rows) - GRID_PAD;
+  const maxRow = Math.max(...rows) + GRID_PAD;
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+  let minY = Number.POSITIVE_INFINITY;
+  let maxY = Number.NEGATIVE_INFINITY;
+
+  for (let row = minRow; row <= maxRow; row += 1) {
+    for (let col = minCol; col <= maxCol; col += 1) {
+      const points = polygonForCell(col, row);
+      points.forEach((point) => {
+        minX = Math.min(minX, point.x);
+        maxX = Math.max(maxX, point.x);
+        minY = Math.min(minY, point.y);
+        maxY = Math.max(maxY, point.y);
+      });
+    }
+  }
 
   return {
-    minX: (minCol - GRID_PAD) * HALF_W - HALF_W,
-    maxX: (maxCol + GRID_PAD) * HALF_W + HALF_W,
-    minY: (minRow - GRID_PAD) * HALF_H - HALF_H,
-    maxY: (maxRow + GRID_PAD) * HALF_H + HALF_H,
-    minCol: minCol - GRID_PAD,
-    maxCol: maxCol + GRID_PAD,
-    minRow: minRow - GRID_PAD,
-    maxRow: maxRow + GRID_PAD,
+    minX,
+    maxX,
+    minY,
+    maxY,
+    minCol,
+    maxCol,
+    minRow,
+    maxRow,
   };
 }
 
@@ -3902,7 +4011,7 @@ function plannerFieldEnhancement(col, row) {
   const point = logicalPoint(col, row);
   const center = logicalPoint(CENTER_CELL.col, CENTER_CELL.row);
   const distance = Math.abs(point.x - center.x) + Math.abs(point.y - center.y);
-  return Math.max(0, distance - 3);
+  return Math.max(0, distance - 4);
 }
 
 function plannerCompoundedValue(base, level, count) {
@@ -3976,10 +4085,10 @@ function buildPlannerAnalysis() {
   const cells = new Map();
   const cropCounts = new Map(CROPS.map((crop) => [crop.id, 0]));
   const cardinalDeltas = [
-    { col: -1, row: -1 },
-    { col: 1, row: -1 },
-    { col: -1, row: 1 },
-    { col: 1, row: 1 },
+    { col: 0, row: -1 },
+    { col: 1, row: 0 },
+    { col: 0, row: 1 },
+    { col: -1, row: 0 },
   ];
 
   for (const key of state.cells) {
@@ -4026,7 +4135,7 @@ function buildPlannerAnalysis() {
   }
 
   const orthogonalNeighborKeys = (cell) =>
-    getDiagonalNeighbors(cell.col, cell.row)
+    getAdjacentNeighbors(cell.col, cell.row)
       .map(({ col, row }) => cellKey(col, row))
       .filter((key) => cells.has(key));
   const hasAdjacentScarecrow = (cell) =>
@@ -4471,10 +4580,10 @@ function buildEffectMap() {
   const skillLevels = plannerSkillLevels();
   const cells = new Map();
   const cardinalDeltas = [
-    { col: -1, row: -1 },
-    { col: 1, row: -1 },
-    { col: -1, row: 1 },
-    { col: 1, row: 1 },
+    { col: 0, row: -1 },
+    { col: 1, row: 0 },
+    { col: 0, row: 1 },
+    { col: -1, row: 0 },
   ];
 
   for (const keyName of state.cells) {
@@ -4508,7 +4617,7 @@ function buildEffectMap() {
   }
 
   const orthogonalNeighborKeys = (cell) =>
-    getDiagonalNeighbors(cell.col, cell.row)
+    getAdjacentNeighbors(cell.col, cell.row)
       .map(({ col, row }) => cellKey(col, row))
       .filter((neighborKey) => cells.has(neighborKey));
 
@@ -5289,12 +5398,6 @@ function draw(options = {}) {
     drawEffectOverlay(points, effect);
 
     const center = gridToPixel(col, row);
-    ctx.save();
-    ctx.fillStyle = "rgba(255,255,255,0.38)";
-    ctx.beginPath();
-    ctx.ellipse(center.x - 8, center.y - 10, 16, 9, -0.3, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
 
     if (isDesert) {
       ctx.save();
@@ -5697,10 +5800,6 @@ function expandToNextRing() {
 
   for (let row = minRow; row <= maxRow; row += 1) {
     for (let col = minCol; col <= maxCol; col += 1) {
-      if ((col + row) % 2 !== 0) {
-        continue;
-      }
-
       const key = cellKey(col, row);
       if (!state.cells.has(key)) {
         targets.push({ col, row });
