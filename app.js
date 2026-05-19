@@ -661,6 +661,7 @@ const recipeTargetSelect = document.getElementById("recipe-target-select");
 const recipeTargetLevelInput = document.getElementById("recipe-target-level");
 const recipeTargetCountInput = document.getElementById("recipe-target-count");
 const recipeCauldronEnhancementInput = document.getElementById("recipe-cauldron-enhancement");
+const recipeWickMasteryInput = document.getElementById("recipe-wick-mastery");
 const recipeEnhancementNote = document.getElementById("recipe-enhancement-note");
 const recipeControls = document.getElementById("recipe-controls");
 const recipeSummary = document.getElementById("recipe-summary");
@@ -2153,10 +2154,22 @@ function compoundedEffect(base, level, count) {
 function enhancementSuccessRate(levelA, levelB, wickMasteryLevel, cauldronEnhancement) {
   const difference = Math.abs(levelA - levelB);
   const baseRate = 0.5 * (0.5 ** difference);
-  const wickBonus = wickMasteryLevel > 0
-    ? compoundedEffect(0.005, wickMasteryLevel, cauldronEnhancement + 1) * baseRate
+  return enhancementSuccessDetails(baseRate, wickMasteryLevel, cauldronEnhancement).rate;
+}
+
+function enhancementSuccessDetails(baseRate, wickMasteryLevel, cauldronEnhancement) {
+  const safeWickMastery = Math.max(0, Number(wickMasteryLevel) || 0);
+  const safeCauldronEnhancement = Math.max(0, Number(cauldronEnhancement) || 0);
+  const wickMultiplier = safeWickMastery > 0
+    ? compoundedEffect(0.005, safeWickMastery, safeCauldronEnhancement + 1)
     : 0;
-  return Math.min(0.75, baseRate + wickBonus);
+  const wickBonus = wickMultiplier * baseRate;
+  return {
+    baseRate,
+    wickMultiplier,
+    wickBonus,
+    rate: Math.min(0.75, baseRate + wickBonus),
+  };
 }
 
 function recipeCauldronEnhancement() {
@@ -2788,11 +2801,15 @@ function renderRecipeCalculator() {
   const targetCount = Math.max(1, Number(recipeTargetCountInput.value) || 1);
   const cauldronEnhancement = recipeCauldronEnhancement();
   const wickMasteryLevel = activeWickMasteryLevel();
-  const enhancementSuccess = enhancementSuccessRate(0, 0, wickMasteryLevel, cauldronEnhancement);
+  const enhancementDetails = enhancementSuccessDetails(0.5, wickMasteryLevel, cauldronEnhancement);
+  const enhancementSuccess = enhancementDetails.rate;
   const expectedCopiesPerSuccess = (1 + enhancementSuccess) / enhancementSuccess;
   recipeTargetLevelInput.value = String(targetLevel);
   recipeTargetCountInput.value = String(targetCount);
   recipeCauldronEnhancementInput.value = String(cauldronEnhancement);
+  if (recipeWickMasteryInput) {
+    recipeWickMasteryInput.value = String(wickMasteryLevel);
+  }
   const recipeMap = recipeSourceMap();
   const recipe = recipeMap.get(selectedKey);
   const directTarget = directEnhancementTargetByCode(selectedKey);
@@ -2805,7 +2822,10 @@ function renderRecipeCalculator() {
   }
 
   if (recipeEnhancementNote) {
-    recipeEnhancementNote.textContent = `심지 숙련 Lv ${wickMasteryLevel}, 솥 강화 +${cauldronEnhancement} 기준으로 계산 중입니다. 같은 강화끼리 합칠 때 성공률 ${formatNumber(enhancementSuccess * 100, 1)}%, 1단계당 기대 소모 ${formatNumber(expectedCopiesPerSuccess, 3)}개`;
+    const bonusText = enhancementDetails.wickBonus > 0
+      ? `기본 ${formatNumber(enhancementDetails.baseRate * 100, 1)}% + 심지/솥 보너스 ${formatNumber(enhancementDetails.wickBonus * 100, 2)}%`
+      : `기본 ${formatNumber(enhancementDetails.baseRate * 100, 1)}%, 심지 숙련 0이라 솥 강화 보너스 없음`;
+    recipeEnhancementNote.textContent = `원본 게임 강화 공식 기준: ${bonusText}. 같은 강화끼리 합칠 때 성공률 ${formatNumber(enhancementSuccess * 100, 2)}%, 1단계당 기대 소모 ${formatNumber(expectedCopiesPerSuccess, 3)}개`;
   }
 
   if (directTarget) {
