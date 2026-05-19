@@ -172,6 +172,12 @@
       "baseDurationMs": 60000
     },
     {
+      "code": "dia_plate",
+      "name": "다이아 플레이트",
+      "type": "equipment",
+      "baseDurationMs": 60000
+    },
+    {
       "code": "moonlight_candle",
       "name": "달빛 양초",
       "type": "tool",

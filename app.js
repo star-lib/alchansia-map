@@ -48,10 +48,10 @@ const CROPS = [
     iconPath: "./crop_icons/dew_root_bulb.png",
     color: "#4aa8e8",
     accentColor: "#9fd8ff",
-    summary: "체비쇼프 2칸 물 공급",
+    summary: "거리 기반 물 공급",
     details: [
       "1칸 차지",
-      "체비쇼프 거리 2칸까지 항상 물을 공급합니다.",
+      "물 공급 범위는 맨해튼 거리 기준으로 계산됩니다.",
       "물 공급 범위는 파란 오버레이로 표시됩니다.",
     ],
     hourlyYield: 0,
@@ -77,11 +77,11 @@ const CROPS = [
     iconPath: "./crop_icons/poison_flower_seed.png",
     color: "#7d49ba",
     accentColor: "#c89cf0",
-    summary: "독 면역, 인접 대각선 땅 중독",
+    summary: "독 면역, 거리 1 땅 중독",
     details: [
       "1칸 차지",
       "독에 면역입니다.",
-      "대각선 인접 1칸 범위의 땅을 중독시킵니다.",
+      "맨해튼 거리 1칸 범위의 땅을 중독시킵니다.",
       "주기적으로 물이 필요합니다.",
     ],
     hourlyYield: 6,
@@ -182,7 +182,7 @@ const CROPS = [
     details: [
       "1칸 차지",
       "주기적으로 물이 필요합니다.",
-      "대각선 인접 1칸 범위의 생산 속도를 30% 올립니다.",
+      "맨해튼 거리 1칸 범위의 생산 속도를 30% 올립니다.",
       "버프 범위는 금색 오버레이로 표시됩니다.",
     ],
     hourlyYield: 0,
@@ -465,6 +465,8 @@ const STATIC_TIMED_ITEMS = [
   { code: "silver_diamond_box", name: "은제 다이아 상자", type: "misc", baseDurationMs: 30000 },
   { code: "gold_diamond_box", name: "금제 다이아 상자", type: "misc", baseDurationMs: 30000 },
   { code: "large_diamond_box", name: "대형 다이아 상자", type: "misc", baseDurationMs: 30000 },
+  { code: "dia_scepter", name: "다이아 셉터", type: "equipment", baseDurationMs: 60000 },
+  { code: "dia_plate", name: "다이아 플레이트", type: "equipment", baseDurationMs: 60000 },
 ];
 
 const canvas = document.getElementById("field-canvas");
@@ -723,6 +725,7 @@ const MAX_LAYOUT_SLOTS = 10;
 const MILLIS_IN_SECOND = 1000;
 const MINUTE_MILLIS = 60000;
 const GROWTH_POTION_NAME = "성장포션";
+const DIRECT_ENHANCEMENT_TARGET_CODES = ["dia_scepter", "dia_plate"];
 const SKILL_NAME_ALIASES = {
   유령깔때기: "유령깔대기",
 };
@@ -1048,6 +1051,29 @@ function logicalPoint(col, row) {
     x: col,
     y: row,
   };
+}
+
+function plannerManhattanDistance(left, right) {
+  const leftPoint = {
+    x: Number.isFinite(left.logicalX) ? left.logicalX : logicalPoint(left.col, left.row).x,
+    y: Number.isFinite(left.logicalY) ? left.logicalY : logicalPoint(left.col, left.row).y,
+  };
+  const rightPoint = {
+    x: Number.isFinite(right.logicalX) ? right.logicalX : logicalPoint(right.col, right.row).x,
+    y: Number.isFinite(right.logicalY) ? right.logicalY : logicalPoint(right.col, right.row).y,
+  };
+  return Math.abs(leftPoint.x - rightPoint.x) + Math.abs(leftPoint.y - rightPoint.y);
+}
+
+function plannerEffectRangeKeys(cells, cell, range) {
+  const distance = Math.max(1, Math.max(0, Number(range) || 0) + 1);
+  return [...cells.values()]
+    .filter(
+      (other) =>
+        other.key !== cell.key
+        && plannerManhattanDistance(other, cell) <= distance,
+    )
+    .map((other) => other.key);
 }
 
 function currentLayoutPayload() {
@@ -2423,6 +2449,22 @@ function findMatchingTimeRecipe(itemA, itemB) {
   return state.timeRecipeByKey.get(buildTimeRecipeKey(itemA.code, itemB.code)) ?? null;
 }
 
+function directEnhancementTargets() {
+  return DIRECT_ENHANCEMENT_TARGET_CODES
+    .map((code) => state.timedItemByCode.get(code))
+    .filter(Boolean)
+    .sort((left, right) => left.name.localeCompare(right.name, "ko") || left.code.localeCompare(right.code, "ko"));
+}
+
+function directEnhancementTargetByCode(code) {
+  return directEnhancementTargets().find((item) => item.code === code) ?? null;
+}
+
+function recipeTargetExists(targetKey) {
+  return state.recipes.some((recipe) => recipe.resultKey === targetKey)
+    || Boolean(directEnhancementTargetByCode(targetKey));
+}
+
 function getRecipeCollections() {
   const productKeys = new Set(state.recipes.map((recipe) => recipe.resultKey));
   const materialKeys = new Set(
@@ -2449,6 +2491,11 @@ function itemDisplayName(itemKey) {
   const recipeByResult = state.recipes.find((recipe) => recipe.resultKey === itemKey);
   if (recipeByResult) {
     return recipeByResult.result;
+  }
+
+  const timedItem = state.timedItemByCode.get(itemKey);
+  if (timedItem) {
+    return timedItem.name;
   }
 
   const recipeByMaterial = state.recipes.find(
@@ -2712,6 +2759,9 @@ function renderRecipeCalculator() {
 
   if (!recipeTargetSelect.options.length) {
     const collections = getRecipeCollections();
+    const directOptions = directEnhancementTargets()
+      .map((item) => `<option value="${item.code}">${item.name}</option>`)
+      .join("");
     const intermediateOptions = state.recipes
       .filter((recipe) => collections.intermediateKeys.has(recipe.resultKey))
       .map((recipe) => `<option value="${recipe.resultKey}">${recipe.result}</option>`)
@@ -2724,6 +2774,7 @@ function renderRecipeCalculator() {
     recipeTargetSelect.innerHTML = `
       <optgroup label="중간재료">${intermediateOptions}</optgroup>
       <optgroup label="완성품">${finalOptions}</optgroup>
+      ${directOptions ? `<optgroup label="직접 강화">${directOptions}</optgroup>` : ""}
     `;
     if (recipeTargetSelect.dataset.pendingValue) {
       recipeTargetSelect.value = recipeTargetSelect.dataset.pendingValue;
@@ -2731,7 +2782,7 @@ function renderRecipeCalculator() {
     }
   }
 
-  const selectedKey = recipeTargetSelect.value || state.recipes[0].resultKey;
+  const selectedKey = recipeTargetSelect.value || state.recipes[0]?.resultKey || directEnhancementTargets()[0]?.code;
   recipeTargetSelect.value = selectedKey;
   const targetLevel = Math.max(0, Number(recipeTargetLevelInput.value) || 0);
   const targetCount = Math.max(1, Number(recipeTargetCountInput.value) || 1);
@@ -2744,8 +2795,9 @@ function renderRecipeCalculator() {
   recipeCauldronEnhancementInput.value = String(cauldronEnhancement);
   const recipeMap = recipeSourceMap();
   const recipe = recipeMap.get(selectedKey);
+  const directTarget = directEnhancementTargetByCode(selectedKey);
 
-  if (!recipe) {
+  if (!recipe && !directTarget) {
     recipeSummary.innerHTML = `<p>선택한 완성품의 계산 정보를 찾지 못했습니다.</p>`;
     recipeControls.innerHTML = "";
     recipeBreakdown.innerHTML = "";
@@ -2754,6 +2806,23 @@ function renderRecipeCalculator() {
 
   if (recipeEnhancementNote) {
     recipeEnhancementNote.textContent = `심지 숙련 Lv ${wickMasteryLevel}, 솥 강화 +${cauldronEnhancement} 기준으로 계산 중입니다. 같은 강화끼리 합칠 때 성공률 ${formatNumber(enhancementSuccess * 100, 1)}%, 1단계당 기대 소모 ${formatNumber(expectedCopiesPerSuccess, 3)}개`;
+  }
+
+  if (directTarget) {
+    const finalCopiesNeeded = enhancementExpectedCount(targetLevel) * targetCount;
+    const requirement = analyzeRequirement(selectedKey, targetLevel, recipeMap, selectedKey, false, targetCount);
+    const baseEntries = groupLevelMap(requirement.baseLevels);
+    recipeControls.innerHTML = "";
+    recipeSummary.innerHTML = `
+      <h4><strong>${directTarget.name}+${targetLevel}</strong></h4>
+      <p>강화 목표 개수 : ${targetCount.toLocaleString("ko-KR")}개</p>
+      <p>필요 <strong>${directTarget.name}+0</strong> : ${finalCopiesNeeded.toLocaleString("ko-KR", { maximumFractionDigits: 2 })}개</p>
+      <p>조합식 없이 직접 획득한 장비를 강화하는 기준입니다.</p>
+    `;
+    recipeBreakdown.innerHTML = renderRequirementSection("필요 기본 재료", baseEntries);
+    renderRecipeTable();
+    saveCalculatorStateToStorage();
+    return;
   }
 
   recipeControls.innerHTML = "";
@@ -3234,7 +3303,7 @@ async function initializeTimeCalculatorData() {
       }
     });
     normalizeCauldronRecipes();
-    if (!state.recipes.some((recipe) => recipe.resultKey === recipeTargetSelect.value)) {
+    if (!recipeTargetExists(recipeTargetSelect.value)) {
       recipeTargetSelect.innerHTML = "";
     }
 
@@ -4696,20 +4765,7 @@ function buildPlannerAnalysis() {
     orthogonalNeighborKeys(cell).some((neighborKey) => state.scarecrowTiles.has(neighborKey));
   const windRange = 1 + (state.galePotionActive ? 1 : 0);
 
-  const rangeKeys = (cell, range) => {
-    if (range >= 1) {
-      return [...cells.values()]
-        .filter((other) =>
-          other.key !== cell.key
-          && Math.max(
-            Math.abs(other.logicalX - cell.logicalX),
-            Math.abs(other.logicalY - cell.logicalY),
-          ) <= range,
-        )
-        .map((other) => other.key);
-    }
-    return orthogonalNeighborKeys(cell);
-  };
+  const rangeKeys = (cell, range) => plannerEffectRangeKeys(cells, cell, range);
 
   const isMature = (cell, timeMs) =>
     Boolean(
@@ -4760,7 +4816,7 @@ function buildPlannerAnalysis() {
           cell.conditions.push("sunlit");
         }
         const range = skillLevels.veinReading > 0 ? plant.enhancement : 0;
-        for (const targetKey of (range > 0 ? rangeKeys(cell, range) : orthogonalNeighborKeys(cell))) {
+        for (const targetKey of rangeKeys(cell, range)) {
           const target = cells.get(targetKey);
           if (target && !target.conditions.includes("sunlit")) {
             target.conditions.push("sunlit");
@@ -5176,20 +5232,7 @@ function buildEffectMap() {
       .map(({ col, row }) => cellKey(col, row))
       .filter((neighborKey) => cells.has(neighborKey));
 
-  const rangeKeys = (cell, range) => {
-    if (range >= 1) {
-      return [...cells.values()]
-        .filter((other) =>
-          other.key !== cell.key
-          && Math.max(
-            Math.abs(other.logicalX - cell.logicalX),
-            Math.abs(other.logicalY - cell.logicalY),
-          ) <= range,
-        )
-        .map((other) => other.key);
-    }
-    return orthogonalNeighborKeys(cell);
-  };
+  const rangeKeys = (cell, range) => plannerEffectRangeKeys(cells, cell, range);
 
   const effects = new Map();
   for (const cell of cells.values()) {
@@ -5238,7 +5281,7 @@ function buildEffectMap() {
     if (plant.id === "sunlight_flower") {
       effects.get(cell.key).sunBuff = 1;
       const range = skillLevels.veinReading > 0 ? plant.enhancement : 0;
-      const targetKeys = range > 0 ? rangeKeys(cell, range) : orthogonalNeighborKeys(cell);
+      const targetKeys = rangeKeys(cell, range);
       for (const targetKey of targetKeys) {
         effects.get(targetKey).sunBuff = 1;
       }
